@@ -284,3 +284,108 @@ canvas {
     color: var(--text-muted);
     padding: 10px;
 }
+
+/* Обновленная верхняя панель (теперь без аватара) */
+.game-header {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand-title {
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: var(--accent-color);
+    text-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+}
+
+/* Отступ внизу контейнера, чтобы список игроков не залезал под фиксированный профиль */
+.bottom-spacer {
+    height: 80px; 
+    width: 100%;
+}
+
+/* Фиксированная нижняя панель профиля */
+.bottom-profile-bar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 420px; /* Чтобы ширина совпадала с контейнером игры */
+    height: 70px;
+    background: rgba(11, 15, 20, 0.9); /* Полупрозрачный темный фон */
+    backdrop-filter: blur(10px); /* Эффект размытия */
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+}
+
+.profile-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bottom-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--accent-color);
+    box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+    background-color: #1a2332;
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-welcome {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.profile-username {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+/* Индикатор статуса "В сети" */
+.profile-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 230, 118, 0.1);
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 230, 118, 0.2);
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    background-color: var(--success-color);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--success-color);
+}
+
+.status-text {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--success-color);
+}
