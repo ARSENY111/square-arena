@@ -9,10 +9,11 @@ const betMinusBtn = document.getElementById('bet-minus');
 const betPlusBtn = document.getElementById('bet-plus');
 const playersListEl = document.getElementById('players-list');
 const usernameTagEl = document.getElementById('username-tag');
+const userAvatarImgEl = document.getElementById('user-avatar-img');
 
 const size = canvas.width; 
 const center = size / 2;
-const borderWidth = 6; // Сделаем рамку тоньше, так как красим само поле
+const borderWidth = 6; 
 
 const SERVER_URL = "ws://localhost:8000/ws"; 
 let socket;
@@ -41,8 +42,10 @@ betPlusBtn.addEventListener('click', () => {
     }
 });
 
+// === ДАННЫЕ ИГРОКА И АВАТАРКА ===
 let myTelegramId = 99999; 
 let myUsername = "Игрок";
+let myAvatarUrl = "https://img.icons8.com/isometric-line/100/user.png"; // Дефолтная заглушка
 
 if (window.Telegram && window.Telegram.WebApp) {
     const tg = window.Telegram.WebApp;
@@ -50,10 +53,22 @@ if (window.Telegram && window.Telegram.WebApp) {
     tg.expand();
     
     if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        myTelegramId = tg.initDataUnsafe.user.id;
-        myUsername = tg.initDataUnsafe.user.first_name || "Игрок";
+        const user = tg.initDataUnsafe.user;
+        myTelegramId = user.id;
+        myUsername = user.first_name || "Игрок";
+        
+        // Telegram предоставляет аватарку в photo_url
+        if (user.photo_url) {
+            myAvatarUrl = user.photo_url;
+        }
     }
-    usernameTagEl.textContent = `🎮 ${myUsername}`;
+    
+    usernameTagEl.textContent = myUsername;
+    userAvatarImgEl.src = myAvatarUrl;
+} else {
+    // Если тестируем на ПК
+    usernameTagEl.textContent = "Тест-Игрок";
+    userAvatarImgEl.src = myAvatarUrl;
 }
 
 // === ФИЗИКА ИГРЫ ===
@@ -133,7 +148,8 @@ function updatePlayersList(serverPlayers) {
         name: p.name,
         bet: p.bet,
         share: p.bet / totalBets,
-        color: p.color
+        color: p.color,
+        avatar: p.avatar || "https://img.icons8.com/isometric-line/100/user.png" // Ссылка на аватарку
     }));
 
     playersListEl.innerHTML = "";
@@ -145,7 +161,7 @@ function updatePlayersList(serverPlayers) {
 
         row.innerHTML = `
             <div class="player-name-wrapper">
-                <span class="player-color-indicator" style="background-color: ${p.color};"></span>
+                <img class="lobby-avatar" src="${p.avatar}" alt="pfp">
                 <span class="player-name">${p.name}</span>
             </div>
             <div class="player-stats">
@@ -161,7 +177,6 @@ function updatePlayersList(serverPlayers) {
 
 const totalPerimeter = size * 4;
 
-// Находим координаты точки на периметре квадрата
 function getPointOnPerimeter(distance) {
     distance = distance % totalPerimeter;
     if (distance < size) {
@@ -175,16 +190,14 @@ function getPointOnPerimeter(distance) {
     }
 }
 
-// НОВАЯ ОТРИСОВКА: Красим само поле секторами
+// ОТРИСОВКА: Плотные цвета и абсолютно черный фон
 function drawArena() {
-    ctx.clearRect(0, 0, size, size);
+    // Очищаем и заливаем фон полностью черным цветом
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, size, size);
     
     if (players.length === 0) {
-        // Если игроков нет, поле просто темно-серое
-        ctx.fillStyle = "#11161d";
-        ctx.fillRect(0, 0, size, size);
-        
-        ctx.strokeStyle = "#232d3b";
+        ctx.strokeStyle = "#1a2332";
         ctx.lineWidth = borderWidth;
         ctx.strokeRect(0, 0, size, size);
         return;
@@ -193,45 +206,34 @@ function drawArena() {
     let currentDist = 0;
     players.forEach(player => {
         const playerLength = player.share * totalPerimeter;
-        const steps = 60; // Количество сегментов для скругления углов внутри сектора
+        const steps = 60; 
         
         ctx.beginPath();
-        // Начинаем отрисовку из центра квадрата
         ctx.moveTo(center, center);
 
-        // Рисуем внешнюю линию по периметру квадрата для этого игрока
         for (let i = 0; i <= steps; i++) {
             let pt = getPointOnPerimeter(currentDist + (playerLength * (i / steps)));
             ctx.lineTo(pt.x, pt.y);
         }
 
-        // Замыкаем сектор обратно в центр
         ctx.closePath();
 
-        // Заливаем сектор полупрозрачным цветом игрока
-        ctx.fillStyle = hexToRgba(player.color, 0.25);
+        // Сплошной (непрозрачный) цвет сектора
+        ctx.fillStyle = player.color;
         ctx.fill();
 
-        // Рисуем яркую разделительную линию на стыке секторов
-        ctx.strokeStyle = player.color;
-        ctx.lineWidth = 2;
+        // Тонкие черные границы между секторами для аккуратности
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3;
         ctx.stroke();
 
         currentDist += playerLength;
     });
 
-    // Рисуем аккуратную внешнюю рамку поверх всего поля
-    ctx.strokeStyle = "#232d3b";
+    // Внешняя рамка
+    ctx.strokeStyle = "#1a2332";
     ctx.lineWidth = borderWidth;
     ctx.strokeRect(0, 0, size, size);
-}
-
-// Утилита для конвертации HEX цветов в RGBA (чтобы залить поле полупрозрачным)
-function hexToRgba(hex, alpha) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 function drawBall() {
@@ -239,10 +241,17 @@ function drawBall() {
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     
+    // Свечение шарика
     ctx.shadowBlur = 15;
     ctx.shadowColor = "#ffffff";
     ctx.fillStyle = "#ffffff";
     ctx.fill();
+
+    // Добавим тонкую черную обводку шарику, чтобы он контрастно выделялся на сплошных цветах
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
     ctx.restore();
 }
 
@@ -357,7 +366,8 @@ shootBtn.addEventListener('click', () => {
         action: "join_game",
         user_id: myTelegramId,
         username: myUsername,
-        bet: currentBet
+        bet: currentBet,
+        avatar: myAvatarUrl // Отправляем серверу ссылку на аватарку
     }));
 
     shootBtn.disabled = true;
