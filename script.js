@@ -15,6 +15,10 @@ const size = canvas.width;
 const center = size / 2;
 const borderWidth = 6; 
 
+// Переменные статистики (в будущем их можно загружать из Базы Данных)
+let totalGames = 0;
+let totalWinsAmount = 0;
+
 const SERVER_URL = "ws://localhost:8000/ws"; 
 let socket;
 
@@ -414,5 +418,29 @@ function switchTab(tabName) {
     );
     if (clickedBtn) {
         clickedBtn.classList.add('active');
+    }
+}
+
+// Показ / Скрытие блока статистики
+function toggleStatsSection() {
+    const statsPanel = document.getElementById('stats-dropdown');
+    if (!statsPanel) return;
+
+    // Переключаем видимость
+    if (statsPanel.style.display === 'block') {
+        statsPanel.style.display = 'none';
+    } else {
+        // Перед открытием обновляем цифры на экране
+        document.getElementById('stats-total-games').textContent = totalGames;
+        document.getElementById('stats-total-wins').textContent = totalWinsAmount + " AC";
+
+        statsPanel.style.display = 'block';
+    }
+}
+
+// Обработка остальных кнопок профиля
+function openProfileSection(section) {
+    if (section === 'refs') {
+        alert("👥 Реферальная система скоро появится!");
     }
 }
