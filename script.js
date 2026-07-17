@@ -374,6 +374,34 @@ shootBtn.addEventListener('click', () => {
     winnerDisplay.textContent = "Ставка сделана! Ожидание игры...";
 });
 
+// === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК ===
+function switchTab(tabName) {
+    // Скрываем все экраны
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    // Деактивируем все кнопки в меню
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+
+    // Показываем нужный экран
+    const targetTab = document.getElementById(`tab-${tabName}`);
+    if (targetTab) {
+        targetTab.classList.add('active');
+    }
+
+    // Подсвечиваем нужную кнопку меню
+    // Находим кнопку по атрибуту onclick
+    const clickedBtn = Array.from(document.querySelectorAll('.nav-item')).find(btn => 
+        btn.getAttribute('onclick').includes(`'${tabName}'`)
+    );
+    if (clickedBtn) {
+        clickedBtn.classList.add('active');
+    }
+}
+
 drawArena();
 drawBall();
 connectWebSocket();
