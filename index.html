@@ -68,7 +68,8 @@
             </div>
         </main>
 
-       <!-- Обновленная вкладка профиля -->
+       
+        <!-- Обновленная вкладка профиля с кнопками в одну линию -->
         <main id="tab-profile" class="tab-content">
             <div class="profile-card">
                 <!-- Аватарка и ник по центру -->
@@ -76,6 +77,33 @@
                     <img id="profile-avatar-large" class="profile-avatar-large" src="https://img.icons8.com/isometric-line/100/user.png" alt="User Avatar">
                     <h2 id="profile-username-text" class="profile-username-text">Загрузка...</h2>
                 </div>
+                
+                <!-- Кнопки управления в ОДНУ линию -->
+                <div class="profile-menu-buttons-row">
+                    <button type="button" class="profile-menu-btn" onclick="toggleStatsSection()">
+                        <span class="btn-icon">📊</span>
+                        <span class="btn-text">Статистика</span>
+                    </button>
+                    <button type="button" class="profile-menu-btn" onclick="openProfileSection('refs')">
+                        <span class="btn-icon">👥</span>
+                        <span class="btn-text">Рефералы</span>
+                    </button>
+                </div>
+
+                <!-- Блок статистики (по умолчанию скрыт) -->
+                <div id="stats-dropdown" class="stats-dropdown-panel">
+                    <div class="stats-item">
+                        <span class="stats-label">Всего игр:</span>
+                        <span id="stats-total-games" class="stats-value">0</span>
+                    </div>
+                    <div class="stats-divider"></div>
+                    <div class="stats-item">
+                        <span class="stats-label">Сумма выигрышей:</span>
+                        <span id="stats-total-wins" class="stats-value">0 AC</span>
+                    </div>
+                </div>
+            </div>
+        </main>
                 
                 <!-- Кнопки управления/разделов -->
                 <div class="profile-menu-buttons">
