@@ -10,12 +10,9 @@
 </head>
 <body>
     <div class="game-container">
-       <!-- Верхняя панель: Баланс и профиль -->
+        <!-- Верхняя панель: Только Баланс -->
         <header class="game-header">
-            <div class="user-info">
-                <img id="user-avatar-img" class="user-avatar" src="https://img.icons8.com/isometric-line/100/user.png" alt="Avatar">
-                <span id="username-tag">Загрузка...</span>
-            </div>
+            <div class="brand-title">🪐 ARENA PVP</div>
             <div class="balance-container">
                 <span class="coin-icon">🪙</span>
                 <span id="balance-value">1000</span>
@@ -23,42 +20,54 @@
             </div>
         </header>
 
-        <!-- Главный экран статуса игры -->
+        <!-- Статус раунда -->
         <div class="status-panel">
-            <div id="winner-display">Ожидание подключения к серверу...</div>
+            <div id="winner-display">Ожидание ставок...</div>
         </div>
 
-        <!-- Игровое поле -->
+        <!-- Арена -->
         <div class="canvas-wrapper">
             <canvas id="squareCanvas" width="360" height="360"></canvas>
         </div>
 
         <!-- Панель управления ставками -->
-        <section class="bet-control-panel">
+        <div class="bet-control-panel">
             <div class="bet-inputs">
-                <button class="bet-adjust-btn" id="bet-minus">-25</button>
+                <button type="button" id="bet-minus" class="bet-adjust-btn">-25</button>
                 <div class="bet-display">
-                    <span class="bet-label">СТАВКА</span>
+                    <span class="bet-label">ВАША СТАВКА</span>
                     <span id="current-bet-value">100</span>
                 </div>
-                <button class="bet-adjust-btn" id="bet-plus">+25</button>
+                <button type="button" id="bet-plus" class="bet-adjust-btn">+25</button>
             </div>
-            
-            <button id="shootBtn" class="action-btn" disabled>
-                Подключение...
-            </button>
-        </section>
+            <button type="button" id="shootBtn" class="action-btn">ПОСТАВИТЬ СТАВКУ</button>
+        </div>
 
-        <!-- Список участников и их шансов -->
-        <section class="players-lobby">
-            <h3>👥 Участники на поле</h3>
+        <!-- Список игроков -->
+        <div class="players-lobby">
+            <h3>В игре:</h3>
             <div id="players-list" class="players-list-grid">
-                <!-- Сюда JS будет добавлять игроков динамически -->
                 <div class="empty-lobby-text">Лобби пусто. Сделайте ставку первым!</div>
             </div>
-        </section>
-    </div>
+        </div>
 
-    <script src="script.js" defer></script>
+        <!-- Отступ, чтобы контент не перекрывался нижней панелью при прокрутке -->
+        <div class="bottom-spacer"></div>
+
+        <!-- НОВАЯ НИЖНЯЯ ПАНЕЛЬ ПРОФИЛЯ -->
+        <div class="bottom-profile-bar">
+            <div class="profile-content">
+                <img id="user-avatar-img" class="bottom-avatar" src="https://img.icons8.com/isometric-line/100/user.png" alt="Avatar">
+                <div class="profile-details">
+                    <span class="profile-welcome">Вы вошли как</span>
+                    <span id="username-tag" class="profile-username">Загрузка...</span>
+                </div>
+            </div>
+            <div class="profile-status-indicator">
+                <span class="status-dot"></span>
+                <span class="status-text">В сети</span>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
