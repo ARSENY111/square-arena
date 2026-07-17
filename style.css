@@ -422,39 +422,35 @@ canvas {
 }
 
 /* ==========================================================================
-   8. СТИЛИ ДЛЯ НОВОГО ПРОФИЛЯ
+   8. СТИЛИ ДЛЯ ОБНОВЛЕННОГО ПРОФИЛЯ (КНОПКИ В ОДНУ СТРОКУ И СТАТИСТИКА)
    ========================================================================== */
 .profile-card {
     background: var(--panel-bg);
     border: 1px solid var(--border-color);
     border-radius: 24px;
-    padding: 30px 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
+    padding: 30px 16px;
+    display: block; /* Избегаем flex на контейнере для стабильности в WebApp */
+    text-align: center;
     margin-top: 10px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 /* Блок аватарки и имени */
 .profile-hero {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    text-align: center;
+    margin-bottom: 24px;
 }
 
 /* Крупная аватарка по центру */
 .profile-avatar-large {
-    width: 96px;
-    height: 96px;
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid var(--accent-color);
     box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
     background-color: #1a2332;
+    display: inline-block;
+    margin-bottom: 12px;
 }
 
 /* Ник под аватаркой */
@@ -463,43 +459,87 @@ canvas {
     font-weight: 800;
     color: var(--text-color);
     letter-spacing: 0.5px;
+    margin: 0;
 }
 
-/* Контейнер для двух кнопок */
-.profile-menu-buttons {
+/* Контейнер для двух кнопок в один ряд */
+.profile-menu-buttons-row {
+    display: table;
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 10px 0; /* Отступ между кнопками */
+    margin-bottom: 16px;
 }
 
-/* Стиль кнопок «Статистика» и «Рефералы» */
-.profile-menu-btn {
+/* Каждая кнопка как ячейка таблицы */
+.profile-menu-buttons-row .profile-menu-btn {
+    display: table-cell;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border-color);
     color: var(--text-color);
-    padding: 14px 20px;
+    padding: 12px 10px;
     border-radius: 14px;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    text-align: center;
+    vertical-align: middle;
     transition: all 0.2s ease;
-    width: 100%;
 }
 
-.profile-menu-btn:active {
+.profile-menu-buttons-row .profile-menu-btn:active {
     background: rgba(0, 242, 254, 0.1);
     border-color: var(--accent-color);
-    transform: scale(0.98);
+    transform: scale(0.97);
 }
 
 .profile-menu-btn .btn-icon {
-    font-size: 18px;
+    margin-right: 6px;
+    font-size: 16px;
 }
 
-.profile-menu-btn .btn-text {
-    letter-spacing: 0.5px;
+/* Выпадающий блок статистики */
+.stats-dropdown-panel {
+    display: none; /* Изначально скрыт */
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px dashed rgba(0, 242, 254, 0.3);
+    border-radius: 16px;
+    padding: 16px;
+    margin-top: 15px;
+    text-align: left;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Анимация плавного появления */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Элемент статистики (Строка) */
+.stats-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.stats-label {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+}
+
+.stats-value {
+    color: var(--accent-color);
+    font-size: 16px;
+    font-weight: 700;
+    text-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+}
+
+/* Разделитель строк */
+.stats-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 4px 0;
 }
