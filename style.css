@@ -1,11 +1,11 @@
 :root {
-    --bg-color: #0f1319;
-    --panel-bg: #161c24;
+    --bg-color: #000000; /* Абсолютно чёрный фон */
+    --panel-bg: #0b0f14; /* Очень тёмный серый для панелей */
     --accent-color: #00f2fe;
     --accent-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
     --text-color: #ffffff;
     --text-muted: #8492a6;
-    --border-color: #232d3b;
+    --border-color: #1a2332;
     --success-color: #00e676;
 }
 
@@ -28,7 +28,7 @@ body {
     overflow-x: hidden;
 }
 
-/* Контейнер приложения под мобильные экраны */
+/* Контейнер приложения */
 .game-container {
     width: 100%;
     max-width: 420px;
@@ -49,9 +49,22 @@ body {
 }
 
 .user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-weight: 600;
     font-size: 14px;
     color: var(--text-color);
+}
+
+/* Стили для аватарок */
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--accent-color);
+    background-color: #1a2332; /* Заглушка, пока грузится фото */
 }
 
 .balance-container {
@@ -100,11 +113,11 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 24px;
     padding: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
 
 canvas {
-    background: #0b0e13;
+    background: #000000; /* Абсолютно чёрная подложка поля */
     border-radius: 16px;
     width: 100%;
     max-width: 360px;
@@ -126,7 +139,7 @@ canvas {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.4);
     border-radius: 14px;
     padding: 6px;
     border: 1px solid var(--border-color);
@@ -168,7 +181,7 @@ canvas {
     color: #ffb300;
 }
 
-/* Главная кнопка действия */
+/* Кнопка */
 .action-btn {
     background: var(--accent-gradient);
     color: #000;
@@ -187,14 +200,14 @@ canvas {
 }
 
 .action-btn:disabled {
-    background: var(--border-color);
+    background: #1a2332;
     color: var(--text-muted);
     box-shadow: none;
     cursor: not-allowed;
     opacity: 0.6;
 }
 
-/* Список игроков в лобби */
+/* Список игроков */
 .players-lobby {
     background: var(--panel-bg);
     border: 1px solid var(--border-color);
@@ -219,22 +232,25 @@ canvas {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(0,0,0,0.15);
+    background: rgba(0,0,0,0.3);
     padding: 10px 14px;
-    border-radius: 10px;
-    border-left: 4px solid transparent; /* Окрашивается цветом игрока */
+    border-radius: 12px;
+    border-left: 4px solid transparent;
 }
 
 .player-name-wrapper {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
-.player-color-indicator {
-    width: 10px;
-    height: 10px;
+/* Мини-аватарка в списке */
+.lobby-avatar {
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
+    object-fit: cover;
+    background-color: #1a2332;
 }
 
 .player-name {
@@ -257,8 +273,8 @@ canvas {
 .player-chance {
     color: var(--accent-color);
     font-weight: 700;
-    background: rgba(0, 242, 254, 0.1);
-    padding: 2px 6px;
+    background: rgba(0, 242, 254, 0.15);
+    padding: 2px 8px;
     border-radius: 6px;
 }
 
