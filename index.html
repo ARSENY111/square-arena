@@ -2,20 +2,61 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PvP Square Arena Mini App</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PvP Square Arena</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Подключаем официальный скрипт Telegram WebApp -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
+    <div class="game-container">
+        <!-- Верхняя панель: Баланс и профиль -->
+        <header class="game-header">
+            <div class="user-info">
+                <span id="username-tag">🎮 Игрок</span>
+            </div>
+            <div class="balance-container">
+                <span class="coin-icon">🪙</span>
+                <span id="balance-value">1000</span>
+                <span class="currency-name">AC</span>
+            </div>
+        </header>
 
-    <div id="winner-display">Нажмите кнопку, чтобы запустить шарик</div>
-    
-    <div id="game-container">
-        <canvas id="squareCanvas" width="340" height="340"></canvas>
+        <!-- Главный экран статуса игры -->
+        <div class="status-panel">
+            <div id="winner-display">Ожидание подключения к серверу...</div>
+        </div>
+
+        <!-- Игровое поле -->
+        <div class="canvas-wrapper">
+            <canvas id="squareCanvas" width="360" height="360"></canvas>
+        </div>
+
+        <!-- Панель управления ставками -->
+        <section class="bet-control-panel">
+            <div class="bet-inputs">
+                <button class="bet-adjust-btn" id="bet-minus">-25</button>
+                <div class="bet-display">
+                    <span class="bet-label">СТАВКА</span>
+                    <span id="current-bet-value">100</span>
+                </div>
+                <button class="bet-adjust-btn" id="bet-plus">+25</button>
+            </div>
+            
+            <button id="shootBtn" class="action-btn" disabled>
+                Подключение...
+            </button>
+        </section>
+
+        <!-- Список участников и их шансов -->
+        <section class="players-lobby">
+            <h3>👥 Участники на поле</h3>
+            <div id="players-list" class="players-list-grid">
+                <!-- Сюда JS будет добавлять игроков динамически -->
+                <div class="empty-lobby-text">Лобби пусто. Сделайте ставку первым!</div>
+            </div>
+        </section>
     </div>
-    
-    <button id="shootBtn">Запустить шарик (15 сек)</button>
 
     <script src="script.js" defer></script>
 </body>
