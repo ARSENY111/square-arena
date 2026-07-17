@@ -1,58 +1,270 @@
-body {
+:root {
+    --bg-color: #0f1319;
+    --panel-bg: #161c24;
+    --accent-color: #00f2fe;
+    --accent-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+    --text-color: #ffffff;
+    --text-muted: #8492a6;
+    --border-color: #232d3b;
+    --success-color: #00e676;
+}
+
+* {
+    box-sizing: border-box;
     margin: 0;
-    background-color: #121212;
-    color: #ffffff;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    user-select: none;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 12px;
+    overflow-x: hidden;
+}
+
+/* Контейнер приложения под мобильные экраны */
+.game-container {
+    width: 100%;
+    max-width: 420px;
     display: flex;
     flex-direction: column;
+    gap: 16px;
+}
+
+/* Верхняя панель (Header) */
+.game-header {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    height: 100vh;
-    overflow: hidden;
 }
 
-#game-container {
-    position: relative;
-    width: 340px;
-    height: 340px;
-    margin-bottom: 20px;
+.user-info {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-color);
 }
 
-canvas {
-    border: 6px solid #2a2a2a;
-    border-radius: 12px;
-    background-color: #161616;
-    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+.balance-container {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 6px;
 }
 
-button {
-    padding: 16px 32px;
-    font-size: 18px;
+#balance-value {
+    font-weight: 700;
+    font-size: 16px;
+    color: #ffb300;
+}
+
+.currency-name {
+    font-size: 11px;
+    color: var(--text-muted);
     font-weight: bold;
-    background: linear-gradient(135deg, #00cdac, #028090);
-    color: white;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    box-shadow: 0 5px 15px rgba(2, 128, 144, 0.4);
-    transition: 0.2s;
 }
 
-button:active {
-    transform: scale(0.95);
-}
-
-button:disabled {
-    background: #444;
-    box-shadow: none;
-    cursor: not-allowed;
+/* Статус раунда */
+.status-panel {
+    text-align: center;
+    background: rgba(0, 242, 254, 0.05);
+    border: 1px dashed rgba(0, 242, 254, 0.2);
+    border-radius: 12px;
+    padding: 10px;
 }
 
 #winner-display {
-    font-size: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
+/* Арена */
+.canvas-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    padding: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+canvas {
+    background: #0b0e13;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 360px;
+    height: auto;
+}
+
+/* Панель управления ставками */
+.bet-control-panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bet-inputs {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 14px;
+    padding: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.bet-adjust-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    color: var(--text-color);
+    font-size: 14px;
     font-weight: bold;
-    height: 28px;
-    margin-bottom: 15px;
-    color: #00cdac;
+    width: 50px;
+    height: 40px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.bet-adjust-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.bet-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.bet-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+#current-bet-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #ffb300;
+}
+
+/* Главная кнопка действия */
+.action-btn {
+    background: var(--accent-gradient);
+    color: #000;
+    border: none;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+}
+
+.action-btn:active {
+    transform: scale(0.98);
+}
+
+.action-btn:disabled {
+    background: var(--border-color);
+    color: var(--text-muted);
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Список игроков в лобби */
+.players-lobby {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 16px;
+}
+
+.players-lobby h3 {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.players-list-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.player-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0,0,0,0.15);
+    padding: 10px 14px;
+    border-radius: 10px;
+    border-left: 4px solid transparent; /* Окрашивается цветом игрока */
+}
+
+.player-name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.player-color-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.player-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.player-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+}
+
+.player-bet {
+    color: #ffb300;
+    font-weight: 600;
+}
+
+.player-chance {
+    color: var(--accent-color);
+    font-weight: 700;
+    background: rgba(0, 242, 254, 0.1);
+    padding: 2px 6px;
+    border-radius: 6px;
+}
+
+.empty-lobby-text {
     text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 10px;
 }
