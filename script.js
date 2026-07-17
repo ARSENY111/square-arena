@@ -43,9 +43,14 @@ betPlusBtn.addEventListener('click', () => {
 });
 
 // === ДАННЫЕ ИГРОКА И АВАТАРКА ===
+
 let myTelegramId = 99999; 
 let myUsername = "Игрок";
 let myAvatarUrl = "https://img.icons8.com/isometric-line/100/user.png"; // Дефолтная заглушка
+
+// Находим элементы на странице
+const profileAvatarLargeEl = document.getElementById('profile-avatar-large');
+const profileUsernameTextEl = document.getElementById('profile-username-text');
 
 if (window.Telegram && window.Telegram.WebApp) {
     const tg = window.Telegram.WebApp;
@@ -57,18 +62,24 @@ if (window.Telegram && window.Telegram.WebApp) {
         myTelegramId = user.id;
         myUsername = user.first_name || "Игрок";
         
-        // Telegram предоставляет аватарку в photo_url
         if (user.photo_url) {
             myAvatarUrl = user.photo_url;
         }
     }
-    
-    usernameTagEl.textContent = myUsername;
-    userAvatarImgEl.src = myAvatarUrl;
 } else {
-    // Если тестируем на ПК
-    usernameTagEl.textContent = "Тест-Игрок";
-    userAvatarImgEl.src = myAvatarUrl;
+    myUsername = "Тест-Игрок";
+}
+
+// Записываем данные в верхнюю шапку
+usernameTagEl.textContent = myUsername;
+userAvatarImgEl.src = myAvatarUrl;
+
+// Записываем эти же данные в профиль (крупный формат)
+if (profileUsernameTextEl) {
+    profileUsernameTextEl.textContent = myUsername;
+}
+if (profileAvatarLargeEl) {
+    profileAvatarLargeEl.src = myAvatarUrl;
 }
 
 // === ФИЗИКА ИГРЫ ===
