@@ -422,69 +422,81 @@ canvas {
 }
 
 /* ==========================================================================
-   8. СТИЛИ ДЛЯ ОБНОВЛЕННОГО ПРОФИЛЯ (КНОПКИ В ОДНУ СТРОКУ И СТАТИСТИКА)
+   8. СТИЛИ ДЛЯ ПРОФИЛЯ (ИСПРАВЛЕННАЯ ШИРИНА И КНОПКИ В РЯД)
    ========================================================================== */
 .profile-card {
     background: var(--panel-bg);
     border: 1px solid var(--border-color);
     border-radius: 24px;
-    padding: 30px 16px;
-    display: block; /* Избегаем flex на контейнере для стабильности в WebApp */
-    text-align: center;
+    padding: 30px 20px;
     margin-top: 10px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    
+    /* Растягиваем карточку на всю ширину, как у шапки */
+    width: 100%;
+    box-sizing: border-box; 
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
 }
 
 /* Блок аватарки и имени */
 .profile-hero {
-    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
 }
 
 /* Крупная аватарка по центру */
 .profile-avatar-large {
-    width: 90px;
-    height: 90px;
+    width: 110px; /* Сделали чуть крупнее и солиднее */
+    height: 110px;
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid var(--accent-color);
     box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
     background-color: #1a2332;
-    display: inline-block;
-    margin-bottom: 12px;
 }
 
 /* Ник под аватаркой */
 .profile-username-text {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 800;
     color: var(--text-color);
     letter-spacing: 0.5px;
     margin: 0;
 }
 
-/* Контейнер для двух кнопок в один ряд */
+/* Контейнер для двух кнопок в ОДНУ линию */
 .profile-menu-buttons-row {
-    display: table;
-    width: 100%;
-    table-layout: fixed;
-    border-collapse: separate;
-    border-spacing: 10px 0; /* Отступ между кнопками */
-    margin-bottom: 16px;
+    display: flex;
+    flex-direction: row; /* Выстраиваем в ряд */
+    gap: 12px;           /* Расстояние между кнопками */
+    width: 100%;         /* Занимают всю ширину карточки */
+    box-sizing: border-box;
 }
 
-/* Каждая кнопка как ячейка таблицы */
+/* Кнопки «Статистика» и «Рефералы» */
 .profile-menu-buttons-row .profile-menu-btn {
-    display: table-cell;
+    flex: 1;             /* Каждая кнопка забирает ровно 50% ширины */
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border-color);
     color: var(--text-color);
-    padding: 12px 10px;
+    padding: 14px 10px;
     border-radius: 14px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    text-align: center;
-    vertical-align: middle;
+    
+    /* Центрируем иконку и текст внутри кнопки */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    
     transition: all 0.2s ease;
 }
 
@@ -494,11 +506,6 @@ canvas {
     transform: scale(0.97);
 }
 
-.profile-menu-btn .btn-icon {
-    margin-right: 6px;
-    font-size: 16px;
-}
-
 /* Выпадающий блок статистики */
 .stats-dropdown-panel {
     display: none; /* Изначально скрыт */
@@ -506,8 +513,8 @@ canvas {
     border: 1px dashed rgba(0, 242, 254, 0.3);
     border-radius: 16px;
     padding: 16px;
-    margin-top: 15px;
-    text-align: left;
+    width: 100%;   /* Растягиваем во всю ширину */
+    box-sizing: border-box;
     animation: fadeIn 0.3s ease;
 }
 
