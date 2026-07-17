@@ -3,7 +3,6 @@ const ctx = canvas.getContext('2d');
 const shootBtn = document.getElementById('shootBtn');
 const winnerDisplay = document.getElementById('winner-display');
 
-// Новые элементы интерфейса
 const balanceValueEl = document.getElementById('balance-value');
 const currentBetValueEl = document.getElementById('current-bet-value');
 const betMinusBtn = document.getElementById('bet-minus');
@@ -13,7 +12,7 @@ const usernameTagEl = document.getElementById('username-tag');
 
 const size = canvas.width; 
 const center = size / 2;
-const borderWidth = 16;
+const borderWidth = 6; // Сделаем рамку тоньше, так как красим само поле
 
 const SERVER_URL = "ws://localhost:8000/ws"; 
 let socket;
@@ -22,14 +21,12 @@ let socket;
 let balance = parseInt(localStorage.getItem('arena_balance')) || 1000;
 let currentBet = 100;
 
-// Обновляем баланс на экране
 function updateUIBalance() {
     balanceValueEl.textContent = balance;
     localStorage.setItem('arena_balance', balance);
 }
 updateUIBalance();
 
-// Настройка кнопок изменения ставки
 betMinusBtn.addEventListener('click', () => {
     if (currentBet > 25) {
         currentBet -= 25;
@@ -44,7 +41,6 @@ betPlusBtn.addEventListener('click', () => {
     }
 });
 
-// Данные текущего игрока Telegram
 let myTelegramId = 99999; 
 let myUsername = "Игрок";
 
@@ -93,10 +89,6 @@ function connectWebSocket() {
                 updatePlayersList(data.players);
                 break;
 
-            case "countdown":
-                winnerDisplay.textContent = `⏱ Старт раунда через ${data.seconds} сек...`;
-                break;
-
             case "start_spin":
                 launchBallFromServer(data.angle, data.players);
                 break;
@@ -109,7 +101,7 @@ function connectWebSocket() {
                 
             case "game_over":
                 setTimeout(() => {
-                    winnerDisplay.textContent = "Сделайте ставку для участия!";
+                    winnerDisplay.textContent = "Ожидание ставок...";
                     shootBtn.disabled = false;
                     resetBall();
                 }, 4000);
@@ -124,32 +116,29 @@ function connectWebSocket() {
     };
 }
 
-// Обновление отображения игроков и их долей (шансов) на интерфейсе
 function updatePlayersList(serverPlayers) {
     const playerArray = Object.values(serverPlayers);
     
     if (playerArray.length === 0) {
         players = [];
         playersListEl.innerHTML = '<div class="empty-lobby-text">Лобби пусто. Сделайте ставку первым!</div>';
-        drawBorders();
+        drawArena();
         return;
     }
 
     const totalBets = playerArray.reduce((sum, p) => sum + p.bet, 0);
     
     players = playerArray.map(p => ({
-        id: p.id || p.name, // Используем уникальный ключ
+        id: p.id || p.name,
         name: p.name,
         bet: p.bet,
         share: p.bet / totalBets,
         color: p.color
     }));
 
-    // Перерисовываем список участников под ареной
     playersListEl.innerHTML = "";
     players.forEach(p => {
         const percent = Math.round(p.share * 100);
-        
         const row = document.createElement('div');
         row.className = "player-row";
         row.style.borderLeftColor = p.color;
@@ -167,58 +156,82 @@ function updatePlayersList(serverPlayers) {
         playersListEl.appendChild(row);
     });
 
-    drawBorders();
+    drawArena();
 }
 
 const totalPerimeter = size * 4;
 
+// Находим координаты точки на периметре квадрата
 function getPointOnPerimeter(distance) {
     distance = distance % totalPerimeter;
-    const offset = borderWidth / 2;
-    const innerSize = size - offset;
-
     if (distance < size) {
-        return { x: distance, y: offset };
+        return { x: distance, y: 0 };
     } else if (distance < size * 2) {
-        return { x: innerSize, y: distance - size };
+        return { x: size, y: distance - size };
     } else if (distance < size * 3) {
-        return { x: size - (distance - size * 2), y: innerSize };
+        return { x: size - (distance - size * 2), y: size };
     } else {
-        return { x: offset, y: size - (distance - size * 3) };
+        return { x: 0, y: size - (distance - size * 3) };
     }
 }
 
-function drawBorders() {
+// НОВАЯ ОТРИСОВКА: Красим само поле секторами
+function drawArena() {
     ctx.clearRect(0, 0, size, size);
     
     if (players.length === 0) {
+        // Если игроков нет, поле просто темно-серое
+        ctx.fillStyle = "#11161d";
+        ctx.fillRect(0, 0, size, size);
+        
         ctx.strokeStyle = "#232d3b";
         ctx.lineWidth = borderWidth;
-        ctx.strokeRect(borderWidth / 2, borderWidth / 2, size - borderWidth, size - borderWidth);
+        ctx.strokeRect(0, 0, size, size);
         return;
     }
 
     let currentDist = 0;
     players.forEach(player => {
         const playerLength = player.share * totalPerimeter;
-        const steps = 100;
+        const steps = 60; // Количество сегментов для скругления углов внутри сектора
         
         ctx.beginPath();
-        let startPt = getPointOnPerimeter(currentDist);
-        ctx.moveTo(startPt.x, startPt.y);
+        // Начинаем отрисовку из центра квадрата
+        ctx.moveTo(center, center);
 
-        for (let i = 1; i <= steps; i++) {
+        // Рисуем внешнюю линию по периметру квадрата для этого игрока
+        for (let i = 0; i <= steps; i++) {
             let pt = getPointOnPerimeter(currentDist + (playerLength * (i / steps)));
             ctx.lineTo(pt.x, pt.y);
         }
 
+        // Замыкаем сектор обратно в центр
+        ctx.closePath();
+
+        // Заливаем сектор полупрозрачным цветом игрока
+        ctx.fillStyle = hexToRgba(player.color, 0.25);
+        ctx.fill();
+
+        // Рисуем яркую разделительную линию на стыке секторов
         ctx.strokeStyle = player.color;
-        ctx.lineWidth = borderWidth;
-        ctx.lineCap = "square";
+        ctx.lineWidth = 2;
         ctx.stroke();
 
         currentDist += playerLength;
     });
+
+    // Рисуем аккуратную внешнюю рамку поверх всего поля
+    ctx.strokeStyle = "#232d3b";
+    ctx.lineWidth = borderWidth;
+    ctx.strokeRect(0, 0, size, size);
+}
+
+// Утилита для конвертации HEX цветов в RGBA (чтобы залить поле полупрозрачным)
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 function drawBall() {
@@ -226,7 +239,7 @@ function drawBall() {
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = 15;
     ctx.shadowColor = "#ffffff";
     ctx.fillStyle = "#ffffff";
     ctx.fill();
@@ -265,8 +278,8 @@ function updatePhysics() {
     ball.x += ball.vx;
     ball.y += ball.vy;
 
-    const minCoord = borderWidth + ball.radius;
-    const maxCoord = size - borderWidth - ball.radius;
+    const minCoord = borderWidth / 2 + ball.radius;
+    const maxCoord = size - borderWidth / 2 - ball.radius;
 
     if (ball.x <= minCoord) { ball.x = minCoord; ball.vx = -ball.vx; }
     else if (ball.x >= maxCoord) { ball.x = maxCoord; ball.vx = -ball.vx; }
@@ -283,9 +296,7 @@ function updatePhysics() {
         const winner = getWinnerAtPoint(ball.x, ball.y);
         winnerDisplay.textContent = `🏆 ПОБЕДА: ${winner.name}!`;
 
-        // Логика начисления монет на клиенте (для тестов)
         if (winner.name === myUsername) {
-            // Наш игрок выиграл общий банк!
             const totalBank = players.reduce((sum, p) => sum + p.bet, 0);
             balance += totalBank;
             updateUIBalance();
@@ -296,7 +307,7 @@ function updatePhysics() {
 
 function gameLoop() {
     ctx.clearRect(0, 0, size, size);
-    drawBorders();
+    drawArena();
     drawBall();
     updatePhysics();
 
@@ -309,7 +320,7 @@ function launchBallFromServer(angle, serverPlayers) {
     updatePlayersList(serverPlayers);
 
     shootBtn.disabled = true;
-    winnerDisplay.textContent = "⚡️ Мяч на арене!";
+    winnerDisplay.textContent = "⚡️ Мяч запущен!";
     
     ball.x = center;
     ball.y = center;
@@ -328,11 +339,10 @@ function resetBall() {
     ball.active = false;
     ball.vx = 0;
     ball.vy = 0;
-    drawBorders();
+    drawArena();
     drawBall();
 }
 
-// Нажатие на кнопку сделать ставку
 shootBtn.addEventListener('click', () => {
     if (!socket || socket.readyState !== WebSocket.OPEN) return;
     if (balance < currentBet) {
@@ -340,11 +350,9 @@ shootBtn.addEventListener('click', () => {
         return;
     }
 
-    // Списываем ставку из баланса
     balance -= currentBet;
     updateUIBalance();
 
-    // Отправляем ставку на бэкенд
     socket.send(JSON.stringify({
         action: "join_game",
         user_id: myTelegramId,
@@ -353,10 +361,9 @@ shootBtn.addEventListener('click', () => {
     }));
 
     shootBtn.disabled = true;
-    winnerDisplay.textContent = "Ставка сделана! Ожидание других участников...";
+    winnerDisplay.textContent = "Ставка сделана! Ожидание игры...";
 });
 
-// Стартовый рендер
-drawBorders();
+drawArena();
 drawBall();
 connectWebSocket();
