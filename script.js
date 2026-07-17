@@ -374,6 +374,10 @@ shootBtn.addEventListener('click', () => {
     winnerDisplay.textContent = "Ставка сделана! Ожидание игры...";
 });
 
+drawArena();
+drawBall();
+connectWebSocket();
+
 // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК ===
 function switchTab(tabName) {
     // Скрываем все экраны
@@ -401,7 +405,3 @@ function switchTab(tabName) {
         clickedBtn.classList.add('active');
     }
 }
-
-drawArena();
-drawBall();
-connectWebSocket();
