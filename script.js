@@ -15,22 +15,20 @@ const size = canvas.width;
 const center = size / 2;
 const borderWidth = 6; 
 
-// Переменные статистики (в будущем их можно загружать из Базы Данных)
+// Переменные статистики (синхронизируются с сервером)
 let totalGames = 0;
 let totalWinsAmount = 0;
 
 const SERVER_URL = "ws://localhost:8000/ws"; 
 let socket;
 
-// === ТЕСТОВЫЙ БАЛАНС И СТАВКА ===
-let balance = parseInt(localStorage.getItem('arena_balance')) || 1000;
+// === БАЛАНС И СТАВКА ===
+let balance = 0; // Загружается с сервера
 let currentBet = 100;
 
 function updateUIBalance() {
     balanceValueEl.textContent = balance;
-    localStorage.setItem('arena_balance', balance);
 }
-updateUIBalance();
 
 betMinusBtn.addEventListener('click', () => {
     if (currentBet > 25) {
@@ -46,13 +44,11 @@ betPlusBtn.addEventListener('click', () => {
     }
 });
 
-// === ДАННЫЕ ИГРОКА И АВАТАРКА ===
-
+// === ДАННЫЕ ИГРОКА И АВАТАРКА ИЗ TELEGRAM ===
 let myTelegramId = 99999; 
 let myUsername = "Игрок";
-let myAvatarUrl = "https://img.icons8.com/isometric-line/100/user.png"; // Дефолтная заглушка
+let myAvatarUrl = "https://img.icons8.com/isometric-line/100/user.png";
 
-// Находим элементы на странице
 const profileAvatarLargeEl = document.getElementById('profile-avatar-large');
 const profileUsernameTextEl = document.getElementById('profile-username-text');
 
@@ -74,17 +70,13 @@ if (window.Telegram && window.Telegram.WebApp) {
     myUsername = "Тест-Игрок";
 }
 
-// Записываем данные в верхнюю шапку
+// Заполняем интерфейс данными
 usernameTagEl.textContent = myUsername;
 userAvatarImgEl.src = myAvatarUrl;
 
-// Записываем эти же данные в профиль (крупный формат)
-if (profileUsernameTextEl) {
-    profileUsernameTextEl.textContent = myUsername;
-}
-if (profileAvatarLargeEl) {
-    profileAvatarLargeEl.src = myAvatarUrl;
-}
+if (profileUsernameTextEl) profileUsernameTextEl.textContent = myUsername;
+if (profileAvatarLargeEl) profileAvatarLargeEl.src = myAvatarUrl;
+
 
 // === ФИЗИКА ИГРЫ ===
 let players = [];
@@ -102,48 +94,63 @@ function connectWebSocket() {
     socket = new WebSocket(SERVER_URL);
 
     socket.onopen = () => {
-        winnerDisplay.textContent = "Подключено! Сделайте ставку.";
-        shootBtn.textContent = "ПОСТАВИТЬ СТАВКУ";
-        shootBtn.disabled = false;
+        winnerDisplay.textContent = "Синхронизация профиля...";
+        
+        // Запрашиваем баланс из базы данных при подключении
+        socket.send(JSON.stringify({
+            action: "sync_profile",
+            user_id: myTelegramId,
+            username: myUsername
+        }));
     };
 
     socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
 
         switch (data.type) {
-            case "init":
+            case "profile_data":
+                // Обновляем данные из БД сервера
+                balance = data.balance;
+                totalGames = data.games_played;
+                totalWinsAmount = data.wins_amount;
+                updateUIBalance();
+                
+                // Подтягиваем текущее состояние лобби
                 updatePlayersList(data.game_state.players);
+                
+                if (!ball.active) {
+                    winnerDisplay.textContent = "Ставки принимаются!";
+                    shootBtn.textContent = "ПОСТАВИТЬ СТАВКУ";
+                    shootBtn.disabled = false;
+                }
                 break;
 
             case "players_update":
                 updatePlayersList(data.players);
                 break;
 
+            case "countdown_update":
+                winnerDisplay.textContent = `⏳ Игра начнется через: ${data.seconds_left} сек`;
+                // Если кнопка не в режиме "Ставка сделана", держим её активной для других
+                if (shootBtn.textContent !== "Ставка сделана! Ожидание игры...") {
+                    shootBtn.disabled = false;
+                }
+                break;
+
             case "start_spin":
                 launchBallFromServer(data.angle, data.players);
                 break;
-
-            case "reset":
-                winnerDisplay.textContent = data.reason || "Игра сброшена";
-                shootBtn.disabled = false;
-                resetBall();
-                break;
                 
             case "game_over":
+                // Ждем окончания показа результатов и обновляем балансы из базы
                 setTimeout(() => {
-                    winnerDisplay.textContent = "Ожидание ставок...";
-                    shootBtn.disabled = false;
+                    socket.send(JSON.stringify({
+                        action: "sync_profile",
+                        user_id: myTelegramId,
+                        username: myUsername
+                    }));
                     resetBall();
                 }, 4000);
-                break;
-                // Внутри функции connectWebSocket -> socket.onmessage -> switch(data.type) добавь:
-
-            case "countdown_update":
-                    winnerDisplay.textContent = `⏳ Игра начнется через: ${data.seconds_left} сек`;
-                     // Разрешаем другим нажимать кнопку, пока идет таймер
-            if (shootBtn.textContent !== "Ставка сделана! Ожидание игры...") {
-                    shootBtn.disabled = false;
-                }
                 break;
         }
     };
@@ -173,7 +180,7 @@ function updatePlayersList(serverPlayers) {
         bet: p.bet,
         share: p.bet / totalBets,
         color: p.color,
-        avatar: p.avatar || "https://img.icons8.com/isometric-line/100/user.png" // Ссылка на аватарку
+        avatar: p.avatar || "https://img.icons8.com/isometric-line/100/user.png"
     }));
 
     playersListEl.innerHTML = "";
@@ -214,9 +221,7 @@ function getPointOnPerimeter(distance) {
     }
 }
 
-// ОТРИСОВКА: Плотные цвета и абсолютно черный фон
 function drawArena() {
-    // Очищаем и заливаем фон полностью черным цветом
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, size, size);
     
@@ -241,12 +246,9 @@ function drawArena() {
         }
 
         ctx.closePath();
-
-        // Сплошной (непрозрачный) цвет сектора
         ctx.fillStyle = player.color;
         ctx.fill();
 
-        // Тонкие черные границы между секторами для аккуратности
         ctx.strokeStyle = "#000000";
         ctx.lineWidth = 3;
         ctx.stroke();
@@ -254,7 +256,6 @@ function drawArena() {
         currentDist += playerLength;
     });
 
-    // Внешняя рамка
     ctx.strokeStyle = "#1a2332";
     ctx.lineWidth = borderWidth;
     ctx.strokeRect(0, 0, size, size);
@@ -265,13 +266,11 @@ function drawBall() {
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     
-    // Свечение шарика
     ctx.shadowBlur = 15;
     ctx.shadowColor = "#ffffff";
     ctx.fillStyle = "#ffffff";
     ctx.fill();
 
-    // Добавим тонкую черную обводку шарику, чтобы он контрастно выделялся на сплошных цветах
     ctx.strokeStyle = "#000000";
     ctx.lineWidth = 2;
     ctx.stroke();
@@ -328,13 +327,6 @@ function updatePhysics() {
 
         const winner = getWinnerAtPoint(ball.x, ball.y);
         winnerDisplay.textContent = `🏆 ПОБЕДА: ${winner.name}!`;
-
-        if (winner.name === myUsername) {
-            const totalBank = players.reduce((sum, p) => sum + p.bet, 0);
-            balance += totalBank;
-            updateUIBalance();
-            winnerDisplay.textContent += ` (+🪙${totalBank})`;
-        }
     }
 }
 
@@ -383,19 +375,17 @@ shootBtn.addEventListener('click', () => {
         return;
     }
 
-    balance -= currentBet;
-    updateUIBalance();
+    // Визуально фиксируем кнопку, списание баланса подтвердит сервер
+    shootBtn.disabled = true;
+    shootBtn.textContent = "Ставка сделана! Ожидание игры...";
 
     socket.send(JSON.stringify({
         action: "join_game",
         user_id: myTelegramId,
         username: myUsername,
         bet: currentBet,
-        avatar: myAvatarUrl // Отправляем серверу ссылку на аватарку
+        avatar: myAvatarUrl
     }));
-
-    shootBtn.disabled = true;
-    winnerDisplay.textContent = "Ставка сделана! Ожидание игры...";
 });
 
 drawArena();
@@ -404,24 +394,19 @@ connectWebSocket();
 
 // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК ===
 function switchTab(tabName) {
-    // Скрываем все экраны
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
     });
 
-    // Деактивируем все кнопки в меню
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
     });
 
-    // Показываем нужный экран
     const targetTab = document.getElementById(`tab-${tabName}`);
     if (targetTab) {
         targetTab.classList.add('active');
     }
 
-    // Подсвечиваем нужную кнопку меню
-    // Находим кнопку по атрибуту onclick
     const clickedBtn = Array.from(document.querySelectorAll('.nav-item')).find(btn => 
         btn.getAttribute('onclick').includes(`'${tabName}'`)
     );
@@ -435,19 +420,16 @@ function toggleStatsSection() {
     const statsPanel = document.getElementById('stats-dropdown');
     if (!statsPanel) return;
 
-    // Переключаем видимость
     if (statsPanel.style.display === 'block') {
         statsPanel.style.display = 'none';
     } else {
-        // Перед открытием обновляем цифры на экране
+        // Заполняем данными, которые пришли из бэкенда
         document.getElementById('stats-total-games').textContent = totalGames;
         document.getElementById('stats-total-wins').textContent = totalWinsAmount + " AC";
-
         statsPanel.style.display = 'block';
     }
 }
 
-// Обработка остальных кнопок профиля
 function openProfileSection(section) {
     if (section === 'refs') {
         alert("👥 Реферальная система скоро появится!");
