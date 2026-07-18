@@ -435,3 +435,48 @@ function openProfileSection(section) {
         alert("👥 Реферальная система скоро появится!");
     }
 }
+
+const depositBtn = document.getElementById('depositBtn');
+
+if (depositBtn) {
+    depositBtn.addEventListener('click', () => {
+        // Запрашиваем у нашего сервера ссылку на оплату (Invoice Link)
+        // Для этого мы можем отправить обычный запрос через сокет или fetch
+        if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+        winnerDisplay.textContent = "🔄 Создаем счет на оплату...";
+        
+        socket.send(JSON.stringify({
+            action: "create_stars_invoice",
+            user_id: myTelegramId,
+            stars_amount: 50 // Например, покупаем пакет за 50 звёзд
+        }));
+    });
+}
+
+// Добавим обработку ответа от сервера внутри socket.onmessage -> switch(data.type)
+// Вставь этот case внутрь switch в script.js:
+/*
+case "invoice_link":
+    if (window.Telegram && window.Telegram.WebApp) {
+        // Открываем нативное окно оплаты Telegram Stars
+        Telegram.WebApp.openInvoice(data.url, function(status) {
+            if (status === 'paid') {
+                winnerDisplay.textContent = "✅ Оплата успешна! Баланс обновлен.";
+                // Просим сервер сразу обновить профиль
+                socket.send(JSON.stringify({
+                    action: "sync_profile",
+                    user_id: myTelegramId,
+                    username: myUsername
+                }));
+            } else if (status === 'failed') {
+                winnerDisplay.textContent = "❌ Ошибка при оплате.";
+            } else {
+                winnerDisplay.textContent = "Ставки принимаются!";
+            }
+        });
+    } else {
+        alert(`На ПК тесте ссылка на оплату: ${data.url}`);
+    }
+    break;
+*/
