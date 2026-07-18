@@ -1,4 +1,95 @@
-<!-- Блок статистики (по умолчанию скрыт) -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Arena PVP</title>
+    
+    <!-- Подключение стилей -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Официальный скрипт Telegram (ОБЯЗАТЕЛЬНО В HEAD) -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Верхняя панель: Профиль игрока и Баланс -->
+        <header class="game-header">
+            <div class="user-info">
+                <img id="user-avatar-img" class="user-avatar" src="https://img.icons8.com/isometric-line/100/user.png" alt="Avatar">
+                <span id="username-tag">Загрузка...</span>
+            </div>
+            <div class="balance-container">
+                <span class="coin-icon">🪙</span>
+                <span id="balance-value">1000</span>
+                <span class="currency-name">AC</span>
+            </div>
+        </header>
+
+        <!-- Основной контент игры (вкладка Арена) -->
+        <main id="tab-arena" class="tab-content active">
+            <!-- Статус раунда -->
+            <div class="status-panel">
+                <div id="winner-display">Ожидание ставок...</div>
+            </div>
+
+            <!-- Арена -->
+            <div class="canvas-wrapper">
+                <canvas id="squareCanvas" width="360" height="360"></canvas>
+            </div>
+
+            <!-- Панель управления ставками -->
+            <div class="bet-control-panel">
+                <div class="bet-inputs">
+                    <button type="button" id="bet-minus" class="bet-adjust-btn">-25</button>
+                    <div class="bet-display">
+                        <span class="bet-label">ВАША СТАВКА</span>
+                        <span id="current-bet-value">100</span>
+                    </div>
+                    <button type="button" id="bet-plus" class="bet-adjust-btn">+25</button>
+                </div>
+                <button type="button" id="shootBtn" class="action-btn">ПОСТАВИТЬ СТАВКУ</button>
+            </div>
+
+            <!-- Список игроков -->
+            <div class="players-lobby">
+                <h3>В игре:</h3>
+                <div id="players-list" class="players-list-grid">
+                    <div class="empty-lobby-text">Лобби пусто. Сделайте ставку первым!</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Вкладка Лидеры -->
+        <main id="tab-leaders" class="tab-content">
+            <div class="placeholder-screen">
+                <h2>🏆 Таблица лидеров</h2>
+                <p>Здесь скоро появится рейтинг лучших игроков.</p>
+            </div>
+        </main>
+
+       <!-- Вкладка профиля -->
+        <main id="tab-profile" class="tab-content">
+            <div class="profile-card">
+                <!-- Аватарка и ник по центру -->
+                <div class="profile-hero">
+                    <img id="profile-avatar-large" class="profile-avatar-large" src="https://img.icons8.com/isometric-line/100/user.png" alt="User Avatar">
+                    <h2 id="profile-username-text" class="profile-username-text">Загрузка...</h2>
+                </div>
+                
+                <!-- Кнопки управления в ОДНУ линию -->
+                <div class="profile-menu-buttons-row">
+                    <button type="button" class="profile-menu-btn" onclick="toggleStatsSection()">
+                        <span class="btn-icon">📊</span>
+                        <span class="btn-text">Статистика</span>
+                    </button>
+                    <button type="button" class="profile-menu-btn" onclick="openProfileSection('refs')">
+                        <span class="btn-icon">👥</span>
+                        <span class="btn-text">Рефералы</span>
+                    </button>
+                </div>
+
+                <!-- Блок статистики (по умолчанию скрыт) -->
                 <div id="stats-dropdown" class="stats-dropdown-panel">
                     <div class="stats-item">
                         <span class="stats-label">Всего игр:</span>
