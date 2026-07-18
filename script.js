@@ -136,6 +136,15 @@ function connectWebSocket() {
                     resetBall();
                 }, 4000);
                 break;
+                // Внутри функции connectWebSocket -> socket.onmessage -> switch(data.type) добавь:
+
+            case "countdown_update":
+                    winnerDisplay.textContent = `⏳ Игра начнется через: ${data.seconds_left} сек`;
+                     // Разрешаем другим нажимать кнопку, пока идет таймер
+            if (shootBtn.textContent !== "Ставка сделана! Ожидание игры...") {
+                    shootBtn.disabled = false;
+                }
+                break;
         }
     };
 
