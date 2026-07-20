@@ -125,6 +125,32 @@ function connectWebSocket() {
                 }
                 break;
 
+            // === ДОБАВЬ ЭТОТ БЛОК СЮДА ===
+        case "invoice_link":
+            if (window.Telegram && window.Telegram.WebApp) {
+                // Открываем нативное окно оплаты Telegram Stars
+                Telegram.WebApp.openInvoice(data.url, function(status) {
+                    if (status === 'paid') {
+                        winnerDisplay.textContent = "✅ Оплата успешна! Обновляем баланс...";
+                        socket.send(JSON.stringify({
+                            action: "sync_profile",
+                            user_id: myTelegramId,
+                            username: myUsername
+                        }));
+                    } else if (status === 'failed') {
+                        winnerDisplay.textContent = "❌ Ошибка при оплате.";
+                    } else {
+                        winnerDisplay.textContent = "Ставки принимаются!";
+                    }
+                });
+            } else {
+                // Если тестируешь с ПК в обычном браузере
+                winnerDisplay.textContent = "Ссылка создана (см. консоль)";
+                console.log("Ссылка на оплату для ПК:", data.url);
+                alert(`Для теста на ПК перейдите по ссылке в консоли или откройте Mini App в Telegram`);
+            }
+            break;
+        // =================================
             case "players_update":
                 updatePlayersList(data.players);
                 break;
@@ -454,29 +480,3 @@ if (depositBtn) {
     });
 }
 
-// Добавим обработку ответа от сервера внутри socket.onmessage -> switch(data.type)
-// Вставь этот case внутрь switch в script.js:
-/*
-case "invoice_link":
-    if (window.Telegram && window.Telegram.WebApp) {
-        // Открываем нативное окно оплаты Telegram Stars
-        Telegram.WebApp.openInvoice(data.url, function(status) {
-            if (status === 'paid') {
-                winnerDisplay.textContent = "✅ Оплата успешна! Баланс обновлен.";
-                // Просим сервер сразу обновить профиль
-                socket.send(JSON.stringify({
-                    action: "sync_profile",
-                    user_id: myTelegramId,
-                    username: myUsername
-                }));
-            } else if (status === 'failed') {
-                winnerDisplay.textContent = "❌ Ошибка при оплате.";
-            } else {
-                winnerDisplay.textContent = "Ставки принимаются!";
-            }
-        });
-    } else {
-        alert(`На ПК тесте ссылка на оплату: ${data.url}`);
-    }
-    break;
-*/
