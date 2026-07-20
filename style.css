@@ -652,3 +652,21 @@ canvas {
     background: #232e3f;
     color: #ffffff;
 }
+
+.bet-input-field {
+    background: transparent;
+    border: none;
+    color: #ffb300;
+    font-size: 20px;
+    font-weight: 800;
+    width: 60px;
+    text-align: center;
+    outline: none;
+}
+/* Убираем стрелочки у input number */
+.bet-input-field::-webkit-outer-spin-button,
+.bet-input-field::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
