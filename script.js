@@ -410,8 +410,9 @@ function launchBallFromServer(angle, serverPlayers) {
 }
 
 function resetBall() {
-    ball.x = center;
-    ball.y = center;
+    const inset = 20; // Тот же отступ, что и в анимации
+    ball.x = inset;
+    ball.y = inset;
     ball.active = false;
     ball.vx = 0;
     ball.vy = 0;
@@ -439,8 +440,7 @@ shootBtn.addEventListener('click', () => {
     }));
 });
 
-drawArena();
-drawBall();
+resetBall(); // Вместо раздельных drawArena и drawBall
 connectWebSocket();
 
 // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК ===
