@@ -414,25 +414,21 @@ function animateRoulette(currentTime) {
     ball.vx *= 0.985;
     ball.vy *= 0.985;
 
-    // --- 2. ЭФФЕКТ "МАГНИТА" К ПОБЕДИТЕЛЮ ---
-    // Первые 30% времени (1.5 сек) шарик летает свободно. 
-    // Оставшееся время он плавно, но с нарастающей силой притягивается в цель.
-    let homingStrength = 0;
-    if (progress > 0.3) {
-        homingStrength = (progress - 0.3) / 0.7; // Возрастает от 0 до 1
-    }
-
-    if (homingStrength > 0) {
+    if (progress > 0.4) { // Начинаем корректировку только после 40% времени
+        let strength = (progress - 0.4) / 0.6; // Плавно нарастает от 0 до 1
+        
+        // Вместо резкого притягивания, мы плавно "подруливаем" вектор скорости
         let dx = animationState.targetX - ball.x;
         let dy = animationState.targetY - ball.y;
+        
+        // Добавляем микро-импульс в сторону цели, который становится слабее по мере приближения
+        ball.vx += dx * 0.005 * strength; 
+        ball.vy += dy * 0.005 * strength;
 
-        // Плавно добавляем вектор тяги в сторону цели
-        ball.vx += dx * 0.03 * homingStrength;
-        ball.vy += dy * 0.03 * homingStrength;
-
-        // Сильнее гасим инерцию, чтобы шарик не пролетал мимо цели
-        ball.vx *= (1 - 0.08 * homingStrength);
-        ball.vy *= (1 - 0.08 * homingStrength);
+        // Усиливаем трение, чтобы шарик плавно терял энергию и "успокаивался"
+        let drag = 0.95 + (0.04 * strength); 
+        ball.vx *= drag;
+        ball.vy *= drag;
     }
 
     ball.active = true;
