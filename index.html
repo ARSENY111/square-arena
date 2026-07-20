@@ -128,6 +128,24 @@
         </nav>
     </div>
 
+    <!-- Модальное окно для выбора суммы пополнения -->
+<div id="depositModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: #1a2332; padding: 20px; border-radius: 12px; border: 2px solid #2ed573; text-align: center; width: 85%; max-width: 320px; color: white; font-family: sans-serif;">
+        <h3 style="margin-top: 0; color: #2ed573;">Пополнение баланса</h3>
+        <p style="font-size: 14px; color: #8899a6;">1 Звезда (★) = 100 игровых монет (AC)</p>
+        
+        <div style="margin: 20px 0;">
+            <label style="display: block; margin-bottom: 8px; font-size: 14px;">Введите количество звёзд:</label>
+            <input type="number" id="starsAmountInput" value="50" min="1" style="width: 80%; padding: 10px; border-radius: 8px; border: 1px solid #2c3e50; background: #0d131a; color: white; text-align: center; font-size: 18px; font-weight: bold;">
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="closeDepositModal" style="padding: 10px 16px; background: #ff4757; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">Отмена</button>
+            <button id="payStarsBtn" style="padding: 10px 16px; background: #2ed573; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">Оплатить</button>
+        </div>
+    </div>
+</div>
+
     <!-- НАШ ИГРОВОЙ СКРИПТ ДОЛЖЕН БЫТЬ ЗДЕСЬ, В САМОМ НИЗУ! -->
     <script src="script.js"></script>
 </body>
