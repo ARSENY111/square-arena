@@ -10,6 +10,7 @@ const betPlusBtn = document.getElementById('bet-plus');
 const playersListEl = document.getElementById('players-list');
 const usernameTagEl = document.getElementById('username-tag');
 const userAvatarImgEl = document.getElementById('user-avatar-img');
+const depositBtn = document.getElementById('depositBtn'); // Исправлено: Добавлено объявление недостающей кнопки
 
 const size = canvas.width; 
 const center = size / 2;
@@ -48,6 +49,7 @@ betPlusBtn.addEventListener('click', () => {
 let myTelegramId = 99999; 
 let myUsername = "Игрок";
 let myAvatarUrl = "https://img.icons8.com/isometric-line/100/user.png";
+let tgInitData = "test_mode"; // По умолчанию режим тестирования для ПК
 
 const profileAvatarLargeEl = document.getElementById('profile-avatar-large');
 const profileUsernameTextEl = document.getElementById('profile-username-text');
@@ -58,6 +60,7 @@ if (window.Telegram && window.Telegram.WebApp) {
     tg.expand();
     
     if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        tgInitData = tg.initData; // Безопасность: отправляем валидационную строку целиком
         const user = tg.initDataUnsafe.user;
         myTelegramId = user.id;
         myUsername = user.first_name || "Игрок";
@@ -66,8 +69,6 @@ if (window.Telegram && window.Telegram.WebApp) {
             myAvatarUrl = user.photo_url;
         }
     }
-} else {
-    myUsername = "Тест-Игрок";
 }
 
 // Заполняем интерфейс данными
@@ -96,11 +97,10 @@ function connectWebSocket() {
     socket.onopen = () => {
         winnerDisplay.textContent = "Синхронизация профиля...";
         
-        // Запрашиваем баланс из базы данных при подключении
+        // Запрашиваем баланс из базы данных при подключении с валидационными данными
         socket.send(JSON.stringify({
             action: "sync_profile",
-            user_id: myTelegramId,
-            username: myUsername
+            init_data: tgInitData
         }));
     };
 
@@ -125,32 +125,30 @@ function connectWebSocket() {
                 }
                 break;
 
-            // === ДОБАВЬ ЭТОТ БЛОК СЮДА ===
-        case "invoice_link":
-            if (window.Telegram && window.Telegram.WebApp) {
-                // Открываем нативное окно оплаты Telegram Stars
-                Telegram.WebApp.openInvoice(data.url, function(status) {
-                    if (status === 'paid') {
-                        winnerDisplay.textContent = "✅ Оплата успешна! Обновляем баланс...";
-                        socket.send(JSON.stringify({
-                            action: "sync_profile",
-                            user_id: myTelegramId,
-                            username: myUsername
-                        }));
-                    } else if (status === 'failed') {
-                        winnerDisplay.textContent = "❌ Ошибка при оплате.";
-                    } else {
-                        winnerDisplay.textContent = "Ставки принимаются!";
-                    }
-                });
-            } else {
-                // Если тестируешь с ПК в обычном браузере
-                winnerDisplay.textContent = "Ссылка создана (см. консоль)";
-                console.log("Ссылка на оплату для ПК:", data.url);
-                alert(`Для теста на ПК перейдите по ссылке в консоли или откройте Mini App в Telegram`);
-            }
-            break;
-        // =================================
+            case "invoice_link":
+                if (window.Telegram && window.Telegram.WebApp && tgInitData !== "test_mode") {
+                    // Открываем нативное окно оплаты Telegram Stars
+                    Telegram.WebApp.openInvoice(data.url, function(status) {
+                        if (status === 'paid') {
+                            winnerDisplay.textContent = "✅ Оплата успешна! Обновляем баланс...";
+                            socket.send(JSON.stringify({
+                                action: "sync_profile",
+                                init_data: tgInitData
+                            }));
+                        } else if (status === 'failed') {
+                            winnerDisplay.textContent = "❌ Ошибка при оплате.";
+                        } else {
+                            winnerDisplay.textContent = "Ставки принимаются!";
+                        }
+                    });
+                } else {
+                    // Если тестируешь с ПК в обычном браузере
+                    winnerDisplay.textContent = "Ссылка создана (см. консоль)";
+                    console.log("Ссылка на оплату для ПК:", data.url);
+                    alert(`Для теста на ПК перейдите по ссылке в консоли или откройте Mini App в Telegram`);
+                }
+                break;
+
             case "players_update":
                 updatePlayersList(data.players);
                 break;
@@ -164,7 +162,6 @@ function connectWebSocket() {
                 break;
 
             case "start_spin":
-                // Было: launchBallFromServer(data.angle, data.players);
                 launchBallFromServer(data.winner_id, data.players);
                 break;
                 
@@ -173,8 +170,7 @@ function connectWebSocket() {
                 setTimeout(() => {
                     socket.send(JSON.stringify({
                         action: "sync_profile",
-                        user_id: myTelegramId,
-                        username: myUsername
+                        init_data: tgInitData
                     }));
                     resetBall();
                 }, 4000);
@@ -315,12 +311,10 @@ let animationState = {
     winnerName: ""
 };
 
-// Функция плавного замедления (Ease Out Cubic)
 function easeOutCubic(t) {
     return 1 - Math.pow(1 - t, 3);
 }
 
-// Вычисляет координаты мячика с отступом от краев, чтобы он не вылетал за Canvas
 function getInnerPerimeterPoint(distance) {
     const inset = 20; // Отступ внутрь
     const side = size - inset * 2;
@@ -333,20 +327,17 @@ function getInnerPerimeterPoint(distance) {
     else return { x: inset, y: inset + side - (innerDist - side * 3) };
 }
 
-// Новая функция запуска: задает начальный бросок и вычисляет точку остановки
 function launchBallFromServer(winnerId, serverPlayers) {
     updatePlayersList(serverPlayers);
     shootBtn.disabled = true;
     winnerDisplay.textContent = "⚡️ Шарик запущен!";
 
-    // 1. Находим целевую точку победителя (середину его сектора на периметре)
     let accumulated = 0;
     let targetWinnerDist = 0;
 
     for (let p of players) {
         let playerLength = p.share * totalPerimeter;
         if (p.id === winnerId) {
-            // Берем ровно середину сектора игрока
             targetWinnerDist = accumulated + (playerLength / 2);
             animationState.winnerName = p.name;
             break;
@@ -354,45 +345,37 @@ function launchBallFromServer(winnerId, serverPlayers) {
         accumulated += playerLength;
     }
 
-    // Получаем точку на периметре
     let pt = getPointOnPerimeter(targetWinnerDist);
 
-    // 2. Рассчитываем финальную цель остановки
-    // Ставим точку на 60% расстояния от центра к краю, чтобы шарик четко лежал в секторе
     animationState.targetX = center + (pt.x - center) * 0.6;
     animationState.targetY = center + (pt.y - center) * 0.6;
 
-    // 3. Задаем шарику сильный случайный импульс для полета по арене
     let angle = Math.random() * Math.PI * 2;
-    let speed = 25 + Math.random() * 10; // Случайная начальная скорость
+    let speed = 25 + Math.random() * 10; 
     ball.vx = Math.cos(angle) * speed;
     ball.vy = Math.sin(angle) * speed;
     
-    // Бросок всегда начинается с центра поля
     ball.x = center;
     ball.y = center;
 
     animationState.active = true;
     animationState.startTime = performance.now();
-    animationState.duration = 5000; // 5 секунд анимации
+    animationState.duration = 5000; 
 
     requestAnimationFrame(animateRoulette);
 }
 
-// Главный цикл физики и отрисовки анимации
 function animateRoulette(currentTime) {
     if (!animationState.active) return;
 
     let elapsed = currentTime - animationState.startTime;
     let progress = Math.min(elapsed / animationState.duration, 1);
 
-    // --- 1. ФИЗИКА ДВИЖЕНИЯ И ОТСКОКОВ ---
     ball.x += ball.vx;
     ball.y += ball.vy;
 
-    const inset = ball.radius + 4; // Границы стен с учетом радиуса
+    const inset = ball.radius + 4; 
     
-    // Отскок от левой и правой стены
     if (ball.x <= inset) {
         ball.x = inset;
         ball.vx *= -1;
@@ -401,7 +384,6 @@ function animateRoulette(currentTime) {
         ball.vx *= -1;
     }
 
-    // Отскок от верхней и нижней стены
     if (ball.y <= inset) {
         ball.y = inset;
         ball.vy *= -1;
@@ -410,22 +392,18 @@ function animateRoulette(currentTime) {
         ball.vy *= -1;
     }
 
-    // Естественное трение (замедление об лед/поле)
     ball.vx *= 0.985;
     ball.vy *= 0.985;
 
-    if (progress > 0.4) { // Начинаем корректировку только после 40% времени
-        let strength = (progress - 0.4) / 0.6; // Плавно нарастает от 0 до 1
+    if (progress > 0.4) { 
+        let strength = (progress - 0.4) / 0.6; 
         
-        // Вместо резкого притягивания, мы плавно "подруливаем" вектор скорости
         let dx = animationState.targetX - ball.x;
         let dy = animationState.targetY - ball.y;
         
-        // Добавляем микро-импульс в сторону цели, который становится слабее по мере приближения
         ball.vx += dx * 0.005 * strength; 
         ball.vy += dy * 0.005 * strength;
 
-        // Усиливаем трение, чтобы шарик плавно терял энергию и "успокаивался"
         let drag = 0.95 + (0.04 * strength); 
         ball.vx *= drag;
         ball.vy *= drag;
@@ -433,7 +411,6 @@ function animateRoulette(currentTime) {
 
     ball.active = true;
 
-    // --- 3. ОТРИСОВКА ---
     ctx.clearRect(0, 0, size, size);
     drawArena();
     drawBall();
@@ -441,11 +418,9 @@ function animateRoulette(currentTime) {
     if (progress < 1) {
         requestAnimationFrame(animateRoulette);
     } else {
-        // Конец анимации
         animationState.active = false;
         winnerDisplay.textContent = `🏆 ПОБЕДА: ${animationState.winnerName}!`;
         
-        // Финально ставим шарик ровно в рассчитанную точку сектора победителя
         ball.x = animationState.targetX;
         ball.y = animationState.targetY;
         drawArena();
@@ -453,9 +428,7 @@ function animateRoulette(currentTime) {
     }
 }
 
-// Сброс шарика перед новым раундом
 function resetBall() {
-    // Возвращаем шарик в центр для следующего вбрасывания
     ball.x = center;
     ball.y = center;
     ball.active = false;
@@ -472,24 +445,22 @@ shootBtn.addEventListener('click', () => {
         return;
     }
 
-    // Визуально фиксируем кнопку, списание баланса подтвердит сервер
     shootBtn.disabled = true;
     shootBtn.textContent = "Ставка сделана! Ожидание игры...";
 
     socket.send(JSON.stringify({
         action: "join_game",
-        user_id: myTelegramId,
-        username: myUsername,
+        init_data: tgInitData,
         bet: currentBet,
         avatar: myAvatarUrl
     }));
 });
 
-resetBall(); // Вместо раздельных drawArena и drawBall
+resetBall(); 
 connectWebSocket();
 
 // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК ===
-function switchTab(tabName) {
+window.switchTab = function(tabName) {
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
     });
@@ -504,33 +475,32 @@ function switchTab(tabName) {
     }
 
     const clickedBtn = Array.from(document.querySelectorAll('.nav-item')).find(btn => 
-        btn.getAttribute('onclick').includes(`'${tabName}'`)
+        btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${tabName}'`)
     );
     if (clickedBtn) {
         clickedBtn.classList.add('active');
     }
-}
+};
 
 // Показ / Скрытие блока статистики
-function toggleStatsSection() {
+window.toggleStatsSection = function() {
     const statsPanel = document.getElementById('stats-dropdown');
     if (!statsPanel) return;
 
     if (statsPanel.style.display === 'block') {
         statsPanel.style.display = 'none';
     } else {
-        // Заполняем данными, которые пришли из бэкенда
         document.getElementById('stats-total-games').textContent = totalGames;
         document.getElementById('stats-total-wins').textContent = totalWinsAmount + " AC";
         statsPanel.style.display = 'block';
     }
-}
+};
 
-function openProfileSection(section) {
+window.openProfileSection = function(section) {
     if (section === 'refs') {
         alert("👥 Реферальная система скоро появится!");
     }
-}
+};
 
 // Находим новые элементы интерфейса
 const depositModal = document.getElementById('depositModal');
@@ -539,21 +509,18 @@ const closeDepositModal = document.getElementById('closeDepositModal');
 const payStarsBtn = document.getElementById('payStarsBtn');
 
 if (depositBtn) {
-    // При клике на "+ Пополнить" показываем модалку
     depositBtn.addEventListener('click', () => {
         depositModal.style.display = 'flex';
     });
 }
 
 if (closeDepositModal) {
-    // Закрытие модалки при клике на "Отмена"
     closeDepositModal.addEventListener('click', () => {
         depositModal.style.display = 'none';
     });
 }
 
 if (payStarsBtn) {
-    // Отправка кастомной суммы на сервер
     payStarsBtn.addEventListener('click', () => {
         const amount = parseInt(starsAmountInput.value);
         
@@ -564,14 +531,12 @@ if (payStarsBtn) {
 
         if (!socket || socket.readyState !== WebSocket.OPEN) return;
 
-        // Закрываем модалку и показываем статус
         depositModal.style.display = 'none';
         winnerDisplay.textContent = `🔄 Создаем счет на ${amount} ★...`;
         
-        // Отправляем на бэкенд именно то число, которое ввёл пользователь
         socket.send(JSON.stringify({
             action: "create_stars_invoice",
-            user_id: myTelegramId,
+            init_data: tgInitData,
             stars_amount: amount 
         }));
     });
