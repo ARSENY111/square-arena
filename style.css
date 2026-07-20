@@ -550,3 +550,131 @@ canvas {
     background: rgba(255, 255, 255, 0.08);
     margin: 4px 0;
 }
+/* Оверлей с эффектом размытия заднего плана */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(8, 12, 18, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+/* Контейнер модалки */
+.modal-content {
+    background: #111823;
+    border: 1px solid rgba(46, 213, 115, 0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(46, 213, 115, 0.1);
+    padding: 24px;
+    border-radius: 16px;
+    text-align: center;
+    width: 85%;
+    max-width: 320px;
+    animation: modalAppear 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalAppear {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal-title {
+    margin: 0 0 6px 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+}
+
+.modal-subtitle {
+    margin: 0 0 24px 0;
+    font-size: 13px;
+    color: #8899a6;
+}
+
+/* Поле ввода с иконкой звезды */
+.input-container {
+    position: relative;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.stars-icon {
+    position: absolute;
+    left: 35px;
+    color: #ffb300; /* Золотой цвет Telegram Stars */
+    font-size: 20px;
+    pointer-events: none;
+}
+
+#starsAmountInput {
+    width: 100%;
+    padding: 12px 12px 12px 45px;
+    border-radius: 10px;
+    border: 1px solid #232e3f;
+    background: #090d14;
+    color: #ffffff;
+    text-align: left;
+    font-size: 18px;
+    font-weight: 600;
+    outline: none;
+    transition: all 0.2s;
+}
+
+#starsAmountInput:focus {
+    border-color: #2ed573;
+    box-shadow: 0 0 10px rgba(46, 213, 115, 0.2);
+}
+
+/* Убираем стрелочки у инпута */
+#starsAmountInput::-webkit-outer-spin-button,
+#starsAmountInput::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Кнопки действия */
+.modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.modal-actions button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: #2ed573;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: #26b962;
+    box-shadow: 0 4px 12px rgba(46, 213, 115, 0.3);
+}
+
+.btn-secondary {
+    background: #232e3f;
+    color: #8899a6;
+}
+
+.btn-secondary:hover {
+    background: #2c3a4f;
+    color: #ffffff;
+}
