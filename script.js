@@ -392,22 +392,6 @@ function animateRoulette(currentTime) {
     }
 }
 
-function launchBallFromServer(angle, serverPlayers) {
-    updatePlayersList(serverPlayers);
-
-    shootBtn.disabled = true;
-    winnerDisplay.textContent = "⚡️ Мяч запущен!";
-    
-    ball.x = center;
-    ball.y = center;
-    ball.active = true;
-
-    const startSpeed = 15; 
-    ball.vx = Math.cos(angle) * startSpeed;
-    ball.vy = Math.sin(angle) * startSpeed;
-
-    gameLoop();
-}
 
 function resetBall() {
     const inset = 20; // Тот же отступ, что и в анимации
