@@ -333,20 +333,20 @@ function getInnerPerimeterPoint(distance) {
     else return { x: inset, y: inset + side - (innerDist - side * 3) };
 }
 
-// Новая функция запуска, которая принимает приказ от сервера
+// Новая функция запуска: задает начальный бросок и вычисляет точку остановки
 function launchBallFromServer(winnerId, serverPlayers) {
     updatePlayersList(serverPlayers);
     shootBtn.disabled = true;
-    winnerDisplay.textContent = "⚡️ Рулетка крутится!";
+    winnerDisplay.textContent = "⚡️ Шарик запущен!";
 
-    // 1. Находим, где на периметре находится сектор победителя
+    // 1. Находим целевую точку победителя (середину его сектора на периметре)
     let accumulated = 0;
     let targetWinnerDist = 0;
 
     for (let p of players) {
         let playerLength = p.share * totalPerimeter;
         if (p.id === winnerId) {
-            // Целимся ровно в середину сектора победителя
+            // Берем ровно середину сектора игрока
             targetWinnerDist = accumulated + (playerLength / 2);
             animationState.winnerName = p.name;
             break;
@@ -354,32 +354,90 @@ function launchBallFromServer(winnerId, serverPlayers) {
         accumulated += playerLength;
     }
 
-    // 2. Настраиваем дистанцию (Мячик делает 3 полных круга + едет до победителя)
+    // Получаем точку на периметре
+    let pt = getPointOnPerimeter(targetWinnerDist);
+
+    // 2. Рассчитываем финальную цель остановки
+    // Ставим точку на 60% расстояния от центра к краю, чтобы шарик четко лежал в секторе
+    animationState.targetX = center + (pt.x - center) * 0.6;
+    animationState.targetY = center + (pt.y - center) * 0.6;
+
+    // 3. Задаем шарику сильный случайный импульс для полета по арене
+    let angle = Math.random() * Math.PI * 2;
+    let speed = 25 + Math.random() * 10; // Случайная начальная скорость
+    ball.vx = Math.cos(angle) * speed;
+    ball.vy = Math.sin(angle) * speed;
+    
+    // Бросок всегда начинается с центра поля
+    ball.x = center;
+    ball.y = center;
+
     animationState.active = true;
     animationState.startTime = performance.now();
-    animationState.startDist = 0; 
-    animationState.targetDist = (totalPerimeter * 3) + targetWinnerDist;
+    animationState.duration = 5000; // 5 секунд анимации
 
     requestAnimationFrame(animateRoulette);
 }
 
-// Главный цикл отрисовки анимации
+// Главный цикл физики и отрисовки анимации
 function animateRoulette(currentTime) {
     if (!animationState.active) return;
 
     let elapsed = currentTime - animationState.startTime;
     let progress = Math.min(elapsed / animationState.duration, 1);
-    let easedProgress = easeOutCubic(progress); // Применяем плавное торможение
 
-    // Вычисляем текущую позицию
-    let currentDist = animationState.startDist + (animationState.targetDist - animationState.startDist) * easedProgress;
-    let pos = getInnerPerimeterPoint(currentDist);
+    // --- 1. ФИЗИКА ДВИЖЕНИЯ И ОТСКОКОВ ---
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    const inset = ball.radius + 4; // Границы стен с учетом радиуса
     
-    ball.x = pos.x;
-    ball.y = pos.y;
+    // Отскок от левой и правой стены
+    if (ball.x <= inset) {
+        ball.x = inset;
+        ball.vx *= -1;
+    } else if (ball.x >= size - inset) {
+        ball.x = size - inset;
+        ball.vx *= -1;
+    }
+
+    // Отскок от верхней и нижней стены
+    if (ball.y <= inset) {
+        ball.y = inset;
+        ball.vy *= -1;
+    } else if (ball.y >= size - inset) {
+        ball.y = size - inset;
+        ball.vy *= -1;
+    }
+
+    // Естественное трение (замедление об лед/поле)
+    ball.vx *= 0.985;
+    ball.vy *= 0.985;
+
+    // --- 2. ЭФФЕКТ "МАГНИТА" К ПОБЕДИТЕЛЮ ---
+    // Первые 30% времени (1.5 сек) шарик летает свободно. 
+    // Оставшееся время он плавно, но с нарастающей силой притягивается в цель.
+    let homingStrength = 0;
+    if (progress > 0.3) {
+        homingStrength = (progress - 0.3) / 0.7; // Возрастает от 0 до 1
+    }
+
+    if (homingStrength > 0) {
+        let dx = animationState.targetX - ball.x;
+        let dy = animationState.targetY - ball.y;
+
+        // Плавно добавляем вектор тяги в сторону цели
+        ball.vx += dx * 0.03 * homingStrength;
+        ball.vy += dy * 0.03 * homingStrength;
+
+        // Сильнее гасим инерцию, чтобы шарик не пролетал мимо цели
+        ball.vx *= (1 - 0.08 * homingStrength);
+        ball.vy *= (1 - 0.08 * homingStrength);
+    }
+
     ball.active = true;
 
-    // Перерисовка кадров
+    // --- 3. ОТРИСОВКА ---
     ctx.clearRect(0, 0, size, size);
     drawArena();
     drawBall();
@@ -387,16 +445,23 @@ function animateRoulette(currentTime) {
     if (progress < 1) {
         requestAnimationFrame(animateRoulette);
     } else {
+        // Конец анимации
         animationState.active = false;
         winnerDisplay.textContent = `🏆 ПОБЕДА: ${animationState.winnerName}!`;
+        
+        // Финально ставим шарик ровно в рассчитанную точку сектора победителя
+        ball.x = animationState.targetX;
+        ball.y = animationState.targetY;
+        drawArena();
+        drawBall();
     }
 }
 
-
+// Сброс шарика перед новым раундом
 function resetBall() {
-    const inset = 20; // Тот же отступ, что и в анимации
-    ball.x = inset;
-    ball.y = inset;
+    // Возвращаем шарик в центр для следующего вбрасывания
+    ball.x = center;
+    ball.y = center;
     ball.active = false;
     ball.vx = 0;
     ball.vy = 0;
@@ -515,4 +580,3 @@ if (payStarsBtn) {
         }));
     });
 }
-
