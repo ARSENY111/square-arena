@@ -606,3 +606,30 @@ if (payStarsBtn) {
         }));
     });
 }
+const betInput = document.getElementById('current-bet-input');
+
+// Обновление ставки через кнопки + / -
+betMinusBtn.addEventListener('click', () => {
+    let val = parseInt(betInput.value);
+    if (val > 10) {
+        betInput.value = val - 10;
+        currentBet = parseInt(betInput.value);
+    }
+});
+
+betPlusBtn.addEventListener('click', () => {
+    let val = parseInt(betInput.value);
+    if (val + 10 <= balance) {
+        betInput.value = val + 10;
+        currentBet = parseInt(betInput.value);
+    }
+});
+
+// Слушатель ручного ввода
+betInput.addEventListener('input', (e) => {
+    let val = parseInt(e.target.value);
+    if (val < 10) val = 10;
+    if (val > balance) val = balance;
+    betInput.value = val;
+    currentBet = val;
+});
