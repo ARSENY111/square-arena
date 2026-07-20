@@ -462,20 +462,47 @@ function openProfileSection(section) {
     }
 }
 
-const depositBtn = document.getElementById('depositBtn');
+// Находим новые элементы интерфейса
+const depositModal = document.getElementById('depositModal');
+const starsAmountInput = document.getElementById('starsAmountInput');
+const closeDepositModal = document.getElementById('closeDepositModal');
+const payStarsBtn = document.getElementById('payStarsBtn');
 
 if (depositBtn) {
+    // При клике на "+ Пополнить" показываем модалку
     depositBtn.addEventListener('click', () => {
-        // Запрашиваем у нашего сервера ссылку на оплату (Invoice Link)
-        // Для этого мы можем отправить обычный запрос через сокет или fetch
+        depositModal.style.display = 'flex';
+    });
+}
+
+if (closeDepositModal) {
+    // Закрытие модалки при клике на "Отмена"
+    closeDepositModal.addEventListener('click', () => {
+        depositModal.style.display = 'none';
+    });
+}
+
+if (payStarsBtn) {
+    // Отправка кастомной суммы на сервер
+    payStarsBtn.addEventListener('click', () => {
+        const amount = parseInt(starsAmountInput.value);
+        
+        if (isNaN(amount) || amount <= 0) {
+            alert("Пожалуйста, введите корректное число звёзд (минимум 1)");
+            return;
+        }
+
         if (!socket || socket.readyState !== WebSocket.OPEN) return;
 
-        winnerDisplay.textContent = "🔄 Создаем счет на оплату...";
+        // Закрываем модалку и показываем статус
+        depositModal.style.display = 'none';
+        winnerDisplay.textContent = `🔄 Создаем счет на ${amount} ★...`;
         
+        // Отправляем на бэкенд именно то число, которое ввёл пользователь
         socket.send(JSON.stringify({
             action: "create_stars_invoice",
             user_id: myTelegramId,
-            stars_amount: 50 // Например, покупаем пакет за 50 звёзд
+            stars_amount: amount 
         }));
     });
 }
