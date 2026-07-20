@@ -376,6 +376,7 @@ function animateRoulette(currentTime) {
 
     const inset = ball.radius + 4; 
     
+    // Отскок от стенок
     if (ball.x <= inset) {
         ball.x = inset;
         ball.vx *= -1;
@@ -392,21 +393,27 @@ function animateRoulette(currentTime) {
         ball.vy *= -1;
     }
 
-    ball.vx *= 0.985;
-    ball.vy *= 0.985;
-
-    if (progress > 0.4) { 
-        let strength = (progress - 0.4) / 0.6; 
+    // НОВАЯ ФИЗИКА ПРИТЯЖЕНИЯ И ТРЕНИЯ
+    if (progress > 0.3) { 
+        // Начинаем притягивать шарик чуть раньше (с 30% прогресса анимации)
+        let strength = (progress - 0.3) / 0.7; // Значение от 0 до 1
         
         let dx = animationState.targetX - ball.x;
         let dy = animationState.targetY - ball.y;
         
-        ball.vx += dx * 0.005 * strength; 
-        ball.vy += dy * 0.005 * strength;
+        // Эффект пружины: чем ближе к концу времени, тем сильнее тянет к цели
+        ball.vx += dx * 0.025 * strength; 
+        ball.vy += dy * 0.025 * strength;
 
-        let drag = 0.95 + (0.04 * strength); 
-        ball.vx *= drag;
-        ball.vy *= drag;
+        // Усиливаем трение (уменьшаем множитель скорости), чтобы погасить инерцию к концу.
+        // Множитель плавно падает с 0.985 до ~0.78, заставляя шарик замереть на цели.
+        let dynamicDrag = 0.985 - (0.2 * Math.pow(strength, 2)); 
+        ball.vx *= dynamicDrag;
+        ball.vy *= dynamicDrag;
+    } else {
+        // Обычное свободное скольжение в первой трети анимации
+        ball.vx *= 0.985;
+        ball.vy *= 0.985;
     }
 
     ball.active = true;
@@ -421,6 +428,8 @@ function animateRoulette(currentTime) {
         animationState.active = false;
         winnerDisplay.textContent = `🏆 ПОБЕДА: ${animationState.winnerName}!`;
         
+        // Шарик уже будет находиться в нужных координатах благодаря новой физике, 
+        // так что этот шаг просто страхует от погрешности в доли пикселя
         ball.x = animationState.targetX;
         ball.y = animationState.targetY;
         drawArena();
