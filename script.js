@@ -327,94 +327,131 @@ function getInnerPerimeterPoint(distance) {
     else return { x: inset, y: inset + side - (innerDist - side * 3) };
 }
 
+// === НОВЫЕ ФУНКЦИИ ДЛЯ РЕАЛИСТИЧНОЙ ФИЗИКИ ===
+
+// Определяет, над сегментом какого периметра остановился шарик (от 0 до totalPerimeter)
+function getDistanceOfPoint(x, y) {
+    let dx = x - center;
+    let dy = y - center;
+    let max = Math.max(Math.abs(dx), Math.abs(dy));
+    if (max === 0) return 0;
+    
+    // Проецируем точку из центра на края арены
+    let Px = center + (dx / max) * center;
+    let Py = center + (dy / max) * center;
+    
+    let eps = 0.1;
+    if (Math.abs(Py - 0) < eps) return Px; // Верхняя грань
+    if (Math.abs(Px - size) < eps) return size + Py; // Правая грань
+    if (Math.abs(Py - size) < eps) return size * 2 + (size - Px); // Нижняя грань
+    if (Math.abs(Px - 0) < eps) return size * 3 + (size - Py); // Левая грань
+    return 0;
+}
+
+// Запускает тысячи скрытых симуляций, чтобы найти естественный бросок для нужного победителя
+function findNaturalVectorForWinner(winnerId) {
+    let winnerStart = 0, winnerEnd = 0, currentD = 0;
+    
+    // Вычисляем границы победителя на периметре
+    for (let p of players) {
+        let pLength = p.share * totalPerimeter;
+        if (p.id === winnerId) {
+            winnerStart = currentD;
+            winnerEnd = currentD + pLength;
+        }
+        currentD += pLength;
+    }
+
+    const inset = ball.radius + 4;
+    const maxAttempts = 15000; // Обычно находит нужный вектор за 50-200 попыток (менее 1 мс)
+
+    for (let i = 0; i < maxAttempts; i++) {
+        let angle = Math.random() * Math.PI * 2;
+        let speed = 25 + Math.random() * 20; // Начальная скорость от 25 до 45
+        let vx = Math.cos(angle) * speed;
+        let vy = Math.sin(angle) * speed;
+
+        let simX = center, simY = center;
+        let simVx = vx, simVy = vy;
+
+        // Симулируем чистую физику до полной остановки
+        while (Math.abs(simVx) > 0.05 || Math.abs(simVy) > 0.05) {
+            simX += simVx;
+            simY += simVy;
+
+            // Отскоки
+            if (simX <= inset) { simX = inset; simVx *= -1; }
+            else if (simX >= size - inset) { simX = size - inset; simVx *= -1; }
+
+            if (simY <= inset) { simY = inset; simVy *= -1; }
+            else if (simY >= size - inset) { simY = size - inset; simVy *= -1; }
+
+            // Трение (0.975 идеально подходит, чтобы шарик останавливался ~за 4-5 секунд)
+            simVx *= 0.975;
+            simVy *= 0.975;
+        }
+
+        // Исключаем сценарии, где шарик останавливается слишком близко к центру арены
+        if (Math.hypot(simX - center, simY - center) < size * 0.25) continue;
+
+        let finalDist = getDistanceOfPoint(simX, simY);
+        
+        // Проверяем, остановился ли шарик на зоне победителя с небольшим отступом от границ (margin)
+        let margin = Math.min(5, (winnerEnd - winnerStart) * 0.1);
+        if (finalDist > winnerStart + margin && finalDist < winnerEnd - margin) {
+            return { vx, vy }; // Идеальный вектор найден!
+        }
+    }
+    
+    // Резервный вариант на случай микро-шансов (например 0.1%), если симуляция не нашла вектор
+    let targetDist = winnerStart + (winnerEnd - winnerStart) / 2;
+    let pt = getPointOnPerimeter(targetDist);
+    let fallbackAngle = Math.atan2(pt.y - center, pt.x - center);
+    return { vx: Math.cos(fallbackAngle) * 30, vy: Math.sin(fallbackAngle) * 30 };
+}
+
+
+// === ОБНОВЛЕННЫЕ ОСНОВНЫЕ ФУНКЦИИ ===
+
 function launchBallFromServer(winnerId, serverPlayers) {
     updatePlayersList(serverPlayers);
     shootBtn.disabled = true;
     winnerDisplay.textContent = "⚡️ Шарик запущен!";
 
-    let accumulated = 0;
-    let targetWinnerDist = 0;
+    // Ищем имя победителя
+    let winnerObj = players.find(p => p.id === winnerId);
+    animationState.winnerName = winnerObj ? winnerObj.name : "Игрок";
 
-    for (let p of players) {
-        let playerLength = p.share * totalPerimeter;
-        if (p.id === winnerId) {
-            targetWinnerDist = accumulated + (playerLength / 2);
-            animationState.winnerName = p.name;
-            break;
-        }
-        accumulated += playerLength;
-    }
-
-    let pt = getPointOnPerimeter(targetWinnerDist);
-
-    animationState.targetX = center + (pt.x - center) * 0.6;
-    animationState.targetY = center + (pt.y - center) * 0.6;
-
-    let angle = Math.random() * Math.PI * 2;
-    let speed = 25 + Math.random() * 10; 
-    ball.vx = Math.cos(angle) * speed;
-    ball.vy = Math.sin(angle) * speed;
+    // Находим идеальный вектор с помощью алгоритма Монте-Карло
+    let vector = findNaturalVectorForWinner(winnerId);
     
     ball.x = center;
     ball.y = center;
+    ball.vx = vector.vx;
+    ball.vy = vector.vy;
 
     animationState.active = true;
-    animationState.startTime = performance.now();
-    animationState.duration = 5000; 
-
     requestAnimationFrame(animateRoulette);
 }
 
-function animateRoulette(currentTime) {
+function animateRoulette() {
     if (!animationState.active) return;
-
-    let elapsed = currentTime - animationState.startTime;
-    let progress = Math.min(elapsed / animationState.duration, 1);
 
     ball.x += ball.vx;
     ball.y += ball.vy;
 
     const inset = ball.radius + 4; 
     
-    // Отскок от стенок
-    if (ball.x <= inset) {
-        ball.x = inset;
-        ball.vx *= -1;
-    } else if (ball.x >= size - inset) {
-        ball.x = size - inset;
-        ball.vx *= -1;
-    }
+    // Честные физические отскоки без магнитов
+    if (ball.x <= inset) { ball.x = inset; ball.vx *= -1; }
+    else if (ball.x >= size - inset) { ball.x = size - inset; ball.vx *= -1; }
 
-    if (ball.y <= inset) {
-        ball.y = inset;
-        ball.vy *= -1;
-    } else if (ball.y >= size - inset) {
-        ball.y = size - inset;
-        ball.vy *= -1;
-    }
+    if (ball.y <= inset) { ball.y = inset; ball.vy *= -1; }
+    else if (ball.y >= size - inset) { ball.y = size - inset; ball.vy *= -1; }
 
-    // НОВАЯ ФИЗИКА ПРИТЯЖЕНИЯ И ТРЕНИЯ
-    if (progress > 0.3) { 
-        // Начинаем притягивать шарик чуть раньше (с 30% прогресса анимации)
-        let strength = (progress - 0.3) / 0.7; // Значение от 0 до 1
-        
-        let dx = animationState.targetX - ball.x;
-        let dy = animationState.targetY - ball.y;
-        
-        // Эффект пружины: чем ближе к концу времени, тем сильнее тянет к цели
-        ball.vx += dx * 0.025 * strength; 
-        ball.vy += dy * 0.025 * strength;
-
-        // Усиливаем трение (уменьшаем множитель скорости), чтобы погасить инерцию к концу.
-        // Множитель плавно падает с 0.985 до ~0.78, заставляя шарик замереть на цели.
-        let dynamicDrag = 0.985 - (0.2 * Math.pow(strength, 2)); 
-        ball.vx *= dynamicDrag;
-        ball.vy *= dynamicDrag;
-    } else {
-        // Обычное свободное скольжение в первой трети анимации
-        ball.vx *= 0.985;
-        ball.vy *= 0.985;
-    }
+    // Трение строго 0.975, чтобы вписаться в тайминг сервера 5.5 сек
+    ball.vx *= 0.975;
+    ball.vy *= 0.975;
 
     ball.active = true;
 
@@ -422,18 +459,13 @@ function animateRoulette(currentTime) {
     drawArena();
     drawBall();
 
-    if (progress < 1) {
+    // Анимация продолжается, пока скорость шарика не упадёт практически до нуля
+    if (Math.abs(ball.vx) > 0.05 || Math.abs(ball.vy) > 0.05) {
         requestAnimationFrame(animateRoulette);
     } else {
+        // Шарик остановился сам
         animationState.active = false;
         winnerDisplay.textContent = `🏆 ПОБЕДА: ${animationState.winnerName}!`;
-        
-        // Шарик уже будет находиться в нужных координатах благодаря новой физике, 
-        // так что этот шаг просто страхует от погрешности в доли пикселя
-        ball.x = animationState.targetX;
-        ball.y = animationState.targetY;
-        drawArena();
-        drawBall();
     }
 }
 
