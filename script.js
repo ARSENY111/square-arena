@@ -164,7 +164,8 @@ function connectWebSocket() {
                 break;
 
             case "start_spin":
-                launchBallFromServer(data.angle, data.players);
+                // Было: launchBallFromServer(data.angle, data.players);
+                launchBallFromServer(data.winner_id, data.players);
                 break;
                 
             case "game_over":
@@ -304,66 +305,90 @@ function drawBall() {
     ctx.restore();
 }
 
-function getWinnerAtPoint(x, y) {
-    let dist = 0;
-    const dTop = y;
-    const dBottom = size - y;
-    const dLeft = x;
-    const dRight = size - x;
-    const minDist = Math.min(dTop, dBottom, dLeft, dRight);
+// === АНИМАЦИЯ РУЛЕТКИ ===
+let animationState = {
+    active: false,
+    startTime: 0,
+    duration: 5000, // Анимация длится 5 секунд
+    startDist: 0,
+    targetDist: 0,
+    winnerName: ""
+};
 
-    if (minDist === dTop) dist = x;
-    else if (minDist === dRight) dist = size + y;
-    else if (minDist === dBottom) dist = size * 3 - x;
-    else if (minDist === dLeft) dist = size * 4 - y;
+// Функция плавного замедления (Ease Out Cubic)
+function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
+}
 
+// Вычисляет координаты мячика с отступом от краев, чтобы он не вылетал за Canvas
+function getInnerPerimeterPoint(distance) {
+    const inset = 20; // Отступ внутрь
+    const side = size - inset * 2;
+    const progress = (distance % totalPerimeter) / totalPerimeter;
+    const innerDist = progress * (side * 4);
+    
+    if (innerDist < side) return { x: inset + innerDist, y: inset };
+    else if (innerDist < side * 2) return { x: inset + side, y: inset + (innerDist - side) };
+    else if (innerDist < side * 3) return { x: inset + side - (innerDist - side * 2), y: inset + side };
+    else return { x: inset, y: inset + side - (innerDist - side * 3) };
+}
+
+// Новая функция запуска, которая принимает приказ от сервера
+function launchBallFromServer(winnerId, serverPlayers) {
+    updatePlayersList(serverPlayers);
+    shootBtn.disabled = true;
+    winnerDisplay.textContent = "⚡️ Рулетка крутится!";
+
+    // 1. Находим, где на периметре находится сектор победителя
     let accumulated = 0;
-    for (let player of players) {
-        accumulated += player.share * totalPerimeter;
-        if (dist <= accumulated) {
-            return player;
+    let targetWinnerDist = 0;
+
+    for (let p of players) {
+        let playerLength = p.share * totalPerimeter;
+        if (p.id === winnerId) {
+            // Целимся ровно в середину сектора победителя
+            targetWinnerDist = accumulated + (playerLength / 2);
+            animationState.winnerName = p.name;
+            break;
         }
+        accumulated += playerLength;
     }
-    return players[players.length - 1];
+
+    // 2. Настраиваем дистанцию (Мячик делает 3 полных круга + едет до победителя)
+    animationState.active = true;
+    animationState.startTime = performance.now();
+    animationState.startDist = 0; 
+    animationState.targetDist = (totalPerimeter * 3) + targetWinnerDist;
+
+    requestAnimationFrame(animateRoulette);
 }
 
-function updatePhysics() {
-    if (!ball.active) return;
+// Главный цикл отрисовки анимации
+function animateRoulette(currentTime) {
+    if (!animationState.active) return;
 
-    ball.vx *= ball.friction;
-    ball.vy *= ball.friction;
+    let elapsed = currentTime - animationState.startTime;
+    let progress = Math.min(elapsed / animationState.duration, 1);
+    let easedProgress = easeOutCubic(progress); // Применяем плавное торможение
 
-    ball.x += ball.vx;
-    ball.y += ball.vy;
+    // Вычисляем текущую позицию
+    let currentDist = animationState.startDist + (animationState.targetDist - animationState.startDist) * easedProgress;
+    let pos = getInnerPerimeterPoint(currentDist);
+    
+    ball.x = pos.x;
+    ball.y = pos.y;
+    ball.active = true;
 
-    const minCoord = borderWidth / 2 + ball.radius;
-    const maxCoord = size - borderWidth / 2 - ball.radius;
-
-    if (ball.x <= minCoord) { ball.x = minCoord; ball.vx = -ball.vx; }
-    else if (ball.x >= maxCoord) { ball.x = maxCoord; ball.vx = -ball.vx; }
-
-    if (ball.y <= minCoord) { ball.y = minCoord; ball.vy = -ball.vy; }
-    else if (ball.y >= maxCoord) { ball.y = maxCoord; ball.vy = -ball.vy; }
-
-    const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
-    if (speed < 0.15) {
-        ball.active = false;
-        ball.vx = 0;
-        ball.vy = 0;
-
-        const winner = getWinnerAtPoint(ball.x, ball.y);
-        winnerDisplay.textContent = `🏆 ПОБЕДА: ${winner.name}!`;
-    }
-}
-
-function gameLoop() {
+    // Перерисовка кадров
     ctx.clearRect(0, 0, size, size);
     drawArena();
     drawBall();
-    updatePhysics();
 
-    if (ball.active) {
-        requestAnimationFrame(gameLoop);
+    if (progress < 1) {
+        requestAnimationFrame(animateRoulette);
+    } else {
+        animationState.active = false;
+        winnerDisplay.textContent = `🏆 ПОБЕДА: ${animationState.winnerName}!`;
     }
 }
 
